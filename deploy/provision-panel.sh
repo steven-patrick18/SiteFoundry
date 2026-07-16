@@ -27,12 +27,14 @@ apt-get update -y
 apt-get install -y curl git ufw nginx postgresql redis-server \
   certbot python3-certbot-nginx ca-certificates gnupg openssl
 
-# Node 20 + pnpm
+# Node 20 + pnpm. Pin pnpm to a Node-20-compatible version — pnpm@latest
+# (11.x) requires node:sqlite / Node 22+ and crashes on Node 20.
+PNPM_VERSION="${PNPM_VERSION:-10.33.4}"
 if ! command -v node >/dev/null 2>&1; then
   curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
   apt-get install -y nodejs
 fi
-corepack enable && corepack prepare pnpm@latest --activate
+npm install -g "pnpm@${PNPM_VERSION}"
 
 # ── app user + code ───────────────────────────────────────────────────────
 id -u "$APP_USER" >/dev/null 2>&1 || useradd -m -s /bin/bash "$APP_USER"
