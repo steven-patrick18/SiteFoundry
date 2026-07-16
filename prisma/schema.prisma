@@ -1,0 +1,14 @@
+// SiteFoundry database schema.
+// Models (tenants, users, credentials, servers, clients, templates, sites,
+// builds, deploy_events, campaign_links, ad_integrations, visits, leads,
+// audit_log) land with Milestone M1 — along with tenant RLS policies applied
+// via raw-SQL migrations.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

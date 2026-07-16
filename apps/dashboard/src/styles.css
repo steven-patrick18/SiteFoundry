@@ -1,0 +1,91 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: #0f1117;
+  color: #e5e7eb;
+}
+
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: #161a23;
+  border-right: 1px solid #262b38;
+  padding: 20px 12px;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 18px;
+  padding: 0 10px 20px;
+  color: #fff;
+}
+
+.brand .version {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: #6b7280;
+}
+
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar nav a {
+  color: #9ca3af;
+  text-decoration: none;
+  padding: 9px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.sidebar nav a:hover {
+  background: #1e2330;
+  color: #e5e7eb;
+}
+
+.sidebar nav a.active {
+  background: #2b3245;
+  color: #fff;
+}
+
+.content {
+  flex: 1;
+  padding: 32px 40px;
+}
+
+.content h1 {
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+
+.content p.placeholder {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.api-status {
+  margin-top: 24px;
+  padding: 14px 16px;
+  background: #161a23;
+  border: 1px solid #262b38;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #9ca3af;
+  max-width: 480px;
+}
+
+.api-status code {
+  color: #93c5fd;
+}
