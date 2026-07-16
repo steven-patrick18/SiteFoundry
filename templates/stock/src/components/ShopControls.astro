@@ -3,7 +3,7 @@
 // and a filter-chip row (On sale / Free delivery / per-store / price
 // buckets) — the visual language of a shopping comparison page. All
 // filtering is client-side over the static grid: zero network calls.
-import { params } from '../lib/config.js';
+import { params, site } from '../lib/config.js';
 
 const brand = params.brand ?? {};
 const products = Array.isArray(params.products) ? params.products : [];
