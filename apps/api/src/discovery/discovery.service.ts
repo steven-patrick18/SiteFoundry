@@ -101,6 +101,10 @@ export class DiscoveryService {
   }
 
   /** Distinct API fetches this calendar month = credits spent via the panel. */
+  usageThisMonth(): Promise<number> {
+    return this.monthlyUsage();
+  }
+
   private async monthlyUsage(): Promise<number> {
     const monthStart = new Date();
     monthStart.setUTCDate(1);
