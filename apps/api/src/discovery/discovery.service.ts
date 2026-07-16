@@ -6,9 +6,11 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { AppConfigService } from '../settings/app-config.service';
 import { DiscoveredProduct, normalizeShoppingResults } from './normalize';
 
 const CACHE_TTL_DAYS = 7;
+const SERPAPI_CONFIG_KEY = 'serpapi_key';
 
 export interface DiscoveryResponse {
   query: string;
@@ -21,8 +23,10 @@ export interface DiscoveryResponse {
 
 /**
  * Product discovery via SerpApi's Google Shopping engine, with a local
- * result cache so repeated queries cost zero API credits. Imported products
- * are stored in the site itself (static build) — visitors never hit the API.
+ * result cache so repeated queries cost zero API credits. The API key is
+ * resolved from the app_config table (set in the Settings UI) first, then
+ * the SERPAPI_KEY env var. Imported products are stored in the site itself
+ * (static build) — visitors never hit the API.
  */
 @Injectable()
 export class DiscoveryService {
@@ -31,18 +35,25 @@ export class DiscoveryService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly appConfig: AppConfigService,
   ) {}
 
-  get enabled(): boolean {
-    return !!this.config.get<string>('SERPAPI_KEY');
+  private async resolveKey(): Promise<string> {
+    const dbKey = await this.appConfig.get(SERPAPI_CONFIG_KEY).catch(() => null);
+    return (dbKey || this.config.get<string>('SERPAPI_KEY') || '').trim();
+  }
+
+  async isEnabled(): Promise<boolean> {
+    return !!(await this.resolveKey());
   }
 
   async search(query: string, gl = 'us'): Promise<DiscoveryResponse> {
     const q = query.trim().toLowerCase();
     if (q.length < 2) throw new BadRequestException('Query too short');
-    if (!this.enabled) {
+    const apiKey = await this.resolveKey();
+    if (!apiKey) {
       throw new ServiceUnavailableException(
-        'Product discovery is not configured — set SERPAPI_KEY in the panel environment',
+        'Product discovery is not configured — set the SerpApi key in Settings → Integrations',
       );
     }
 
@@ -67,7 +78,7 @@ export class DiscoveryService {
     url.searchParams.set('q', q);
     url.searchParams.set('gl', gl);
     url.searchParams.set('hl', 'en');
-    url.searchParams.set('api_key', this.config.get<string>('SERPAPI_KEY')!);
+    url.searchParams.set('api_key', apiKey);
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 20_000);

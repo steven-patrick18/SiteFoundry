@@ -22,7 +22,7 @@ export class DiscoveryController {
   }
 
   @Get('status')
-  status(@CurrentUser() _user: AuthUser) {
-    return { enabled: this.discovery.enabled };
+  async status(@CurrentUser() _user: AuthUser) {
+    return { enabled: await this.discovery.isEnabled() };
   }
 }

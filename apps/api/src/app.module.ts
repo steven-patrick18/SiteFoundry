@@ -17,6 +17,7 @@ import { DiscoveryModule } from './discovery/discovery.module';
 import { LeadsModule } from './leads/leads.module';
 import { SslModule } from './ssl/ssl.module';
 import { SettingsModule } from './settings/settings.module';
+import { AppConfigModule } from './settings/app-config.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
@@ -40,6 +41,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     DiscoveryModule,
     LeadsModule,
     SslModule,
+    AppConfigModule,
     SettingsModule,
     ScheduleModule.forRoot(),
   ],

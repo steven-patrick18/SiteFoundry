@@ -25,7 +25,7 @@ interface SystemInfo {
     node_env: string;
   };
   integrations: {
-    serpapi: { configured: boolean; searches_this_month: number };
+    serpapi: { configured: boolean; from_ui: boolean; searches_this_month: number };
     pushvault: { configured: boolean; note: string };
     callforge: { configured: boolean; note: string };
     google_ads_api: { configured: boolean; note: string };
@@ -44,6 +44,7 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const [busy, setBusy] = useState(false);
   const [forbidden, setForbidden] = useState(false);
 
@@ -154,7 +155,10 @@ export default function SettingsPage() {
               ))}
             </tbody>
           </table>
-          <button onClick={() => setShowAdd(true)}>+ Add user</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => setShowAdd(true)}>+ Add user</button>
+            <button onClick={() => setShowPw(true)}>Change my password</button>
+          </div>
           <p className="sub" style={{ marginTop: 8 }}>
             admin: {ROLE_HELP.admin} · builder: {ROLE_HELP.builder} · viewer: {ROLE_HELP.viewer}
           </p>
@@ -194,19 +198,12 @@ export default function SettingsPage() {
         {info && (
           <section className="section-card">
             <h2>Integrations</h2>
-            <div className="kv">
-              <span>SerpApi</span>
-              <span>
-                {info.integrations.serpapi.configured ? (
-                  <>
-                    <span className="badge" style={{ background: '#22c55e' }}>connected</span>
-                    {' '}{info.integrations.serpapi.searches_this_month} searches this month
-                  </>
-                ) : (
-                  <span className="sub">not configured — set SERPAPI_KEY</span>
-                )}
-              </span>
-            </div>
+            <SerpApiRow
+              info={info.integrations.serpapi}
+              onChanged={reload}
+              setNotice={setNotice}
+              setError={setError}
+            />
             <div className="kv">
               <span>PushVault</span>
               <span className="sub">{info.integrations.pushvault.note}</span>
@@ -234,7 +231,152 @@ export default function SettingsPage() {
           }}
         />
       )}
+
+      {showPw && (
+        <ChangePasswordModal
+          onClose={() => setShowPw(false)}
+          onDone={() => {
+            setShowPw(false);
+            setNotice('Password changed');
+          }}
+        />
+      )}
     </>
+  );
+}
+
+function SerpApiRow({
+  info, onChanged, setNotice, setError,
+}: {
+  info: { configured: boolean; from_ui: boolean; searches_this_month: number };
+  onChanged: () => Promise<void>;
+  setNotice: (m: string | null) => void;
+  setError: (m: string | null) => void;
+}) {
+  const [key, setKey] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function save() {
+    if (key.trim().length < 10) {
+      setError('Enter a valid SerpApi key');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await api('/settings/integrations/serpapi', {
+        method: 'PUT',
+        body: JSON.stringify({ key: key.trim() }),
+      });
+      setKey('');
+      setEditing(false);
+      setNotice('SerpApi key saved');
+      await onChanged();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function clearKey() {
+    if (!window.confirm('Remove the SerpApi key from the panel?')) return;
+    setBusy(true);
+    try {
+      await api('/settings/integrations/serpapi', { method: 'DELETE' });
+      setNotice('SerpApi key removed');
+      await onChanged();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="kv" style={{ alignItems: 'flex-start' }}>
+      <span>SerpApi</span>
+      <div style={{ flex: 1 }}>
+        <div style={{ marginBottom: 6 }}>
+          {info.configured ? (
+            <>
+              <span className="badge" style={{ background: '#22c55e' }}>connected</span>{' '}
+              {info.searches_this_month} searches this month
+              <span className="sub"> · key {info.from_ui ? 'stored in panel' : 'from environment'}</span>
+            </>
+          ) : (
+            <span className="sub">not configured — add your key below (product finder needs it)</span>
+          )}
+        </div>
+        {editing || !info.configured ? (
+          <div style={{ display: 'flex', gap: 6 }}>
+            <input
+              type="password"
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+              placeholder="Paste SerpApi key"
+              style={{ flex: 1 }}
+            />
+            <button disabled={busy} onClick={() => void save()}>{busy ? 'Saving…' : 'Save'}</button>
+            {editing && <button onClick={() => { setEditing(false); setKey(''); }}>Cancel</button>}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button onClick={() => setEditing(true)}>Update key</button>
+            {info.from_ui && <button className="danger" disabled={busy} onClick={() => void clearKey()}>Remove</button>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ChangePasswordModal({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (next !== confirm) {
+      setError('New passwords do not match');
+      return;
+    }
+    if (next.length < 8) {
+      setError('New password must be at least 8 characters');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await api('/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({ current_password: current, new_password: next }),
+      });
+      onDone();
+    } catch (err: any) {
+      setError(err.message);
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <form className="modal" style={{ width: 400 }} onClick={(e) => e.stopPropagation()} onSubmit={onSubmit}>
+        <h2>Change my password</h2>
+        <label>Current password<input type="password" value={current} onChange={(e) => setCurrent(e.target.value)} required /></label>
+        <label>New password (min 8)<input type="password" value={next} minLength={8} onChange={(e) => setNext(e.target.value)} required /></label>
+        <label>Confirm new password<input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required /></label>
+        {error && <div className="error">{error}</div>}
+        <div className="modal-actions">
+          <button type="button" onClick={onClose}>Cancel</button>
+          <button type="submit" disabled={busy}>{busy ? 'Changing…' : 'Change password'}</button>
+        </div>
+      </form>
+    </div>
   );
 }
 

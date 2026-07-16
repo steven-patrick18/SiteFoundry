@@ -36,6 +36,28 @@ export class AuthService {
     return this.issueTokens(user.id, user.tenantId, user.email, user.role);
   }
 
+  /** Self-service password change — verifies the current password first. */
+  async changePassword(
+    userId: string,
+    tenantId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    if (newPassword.length < 8) {
+      throw new UnauthorizedException('New password must be at least 8 characters');
+    }
+    const user = await this.prisma.admin.user.findUnique({ where: { id: userId } });
+    if (!user || !(await bcrypt.compare(currentPassword, user.passwordHash))) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+    await this.prisma.withTenant(tenantId, (tx) =>
+      tx.user.update({
+        where: { id: userId },
+        data: { passwordHash: bcrypt.hashSync(newPassword, 10) },
+      }),
+    );
+  }
+
   async refresh(refreshToken: string): Promise<TokenPair> {
     let payload: any;
     try {

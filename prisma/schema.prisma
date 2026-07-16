@@ -321,6 +321,21 @@ model Lead {
   @@map("leads")
 }
 
+// Global panel configuration (not tenant data) — e.g. the SerpApi key set
+// from the Settings UI. Values are envelope-encrypted (same vault as
+// credentials); only the owner/admin DB identity touches it.
+model AppConfig {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key        String   @unique
+  ciphertext Bytes
+  dekWrapped Bytes    @map("dek_wrapped")
+  iv         Bytes
+  authTag    Bytes    @map("auth_tag")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@map("app_config")
+}
+
 model DeployEvent {
   id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenantId       String   @map("tenant_id") @db.Uuid

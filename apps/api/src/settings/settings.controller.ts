@@ -1,8 +1,27 @@
-import { Controller, ForbiddenException, Get } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  HttpCode,
+  Put,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { IsString, MinLength } from 'class-validator';
 import { AuthUser, CurrentUser } from '../auth/current-user.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 import { DiscoveryService } from '../discovery/discovery.service';
+import { AppConfigService } from './app-config.service';
+
+const SERPAPI_CONFIG_KEY = 'serpapi_key';
+
+class SerpApiKeyDto {
+  @IsString()
+  @MinLength(10)
+  key!: string;
+}
 
 /** §12 Settings: system + integrations overview. Never exposes secrets —
  * only which integrations are configured and non-sensitive mode flags. */
@@ -12,6 +31,7 @@ export class SettingsController {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     private readonly discovery: DiscoveryService,
+    private readonly appConfig: AppConfigService,
   ) {}
 
   @Get('system')
@@ -45,8 +65,9 @@ export class SettingsController {
       },
       integrations: {
         serpapi: {
-          configured: this.discovery.enabled,
-          searches_this_month: this.discovery.enabled
+          configured: await this.discovery.isEnabled(),
+          from_ui: await this.appConfig.has(SERPAPI_CONFIG_KEY),
+          searches_this_month: (await this.discovery.isEnabled())
             ? await this.discovery.usageThisMonth()
             : 0,
         },
@@ -58,5 +79,32 @@ export class SettingsController {
         google_ads_api: { configured: false, note: 'Phase 2 — OAuth spend sync' },
       },
     };
+  }
+
+  /** Store the SerpApi key (envelope-encrypted). Admin only; never returned. */
+  @Put('integrations/serpapi')
+  @HttpCode(204)
+  async setSerpApiKey(@CurrentUser() user: AuthUser, @Body() dto: SerpApiKeyDto) {
+    this.requireAdmin(user);
+    await this.appConfig.set(SERPAPI_CONFIG_KEY, dto.key.trim());
+    await this.prisma.admin.auditLog.create({
+      data: {
+        tenantId: user.tenantId, userId: user.userId,
+        action: 'integration.serpapi_set', entityType: 'integration', entityId: null,
+      },
+    });
+  }
+
+  @Delete('integrations/serpapi')
+  @HttpCode(204)
+  async clearSerpApiKey(@CurrentUser() user: AuthUser) {
+    this.requireAdmin(user);
+    await this.appConfig.clear(SERPAPI_CONFIG_KEY);
+  }
+
+  private requireAdmin(user: AuthUser) {
+    if (user.role !== 'admin') {
+      throw new ForbiddenException('Only admins can change integration settings');
+    }
   }
 }
