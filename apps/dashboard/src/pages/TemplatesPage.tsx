@@ -55,22 +55,41 @@ export default function TemplatesPage() {
       <div className="card-grid">
         {templates.map((t) => (
           <div key={t.id} className="card">
-            <div className="card-preview">
+            <a
+              className="card-preview"
+              href={`/previews/${t.category}/`}
+              target="_blank"
+              rel="noreferrer"
+              title="Open live demo preview"
+            >
               {t.previewImageUrl ? (
-                <img src={t.previewImageUrl} alt="" />
+                <img src={t.previewImageUrl} alt={`${t.name} preview`} />
               ) : (
                 <span>{CATEGORY_LABELS[t.category] ?? t.category}</span>
               )}
-            </div>
+            </a>
             <div className="card-body">
               <div className="card-title">
                 {t.name}
                 <span className="sub"> v{t.version}{t.tenantId ? '' : ' · stock'}</span>
               </div>
               <p className="sub">{t.description}</p>
-              <button onClick={() => navigate(`/sites/new?template=${t.id}`)}>
-                Use this template
-              </button>
+              <div className="card-actions">
+                <a
+                  className="button-link"
+                  href={`/previews/${t.category}/`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Preview
+                </a>
+                <button onClick={() => navigate(`/sites/new?template=${t.id}`)}>
+                  Use this template
+                </button>
+              </div>
+              <p className="sub" style={{ marginTop: 8 }}>
+                Demo content &amp; photos — replaced per client in the wizard.
+              </p>
             </div>
           </div>
         ))}

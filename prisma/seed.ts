@@ -189,10 +189,15 @@ async function main() {
     const found = await prisma.template.findFirst({
       where: { tenantId: null, name: t.name },
     });
+    const previewImageUrl = `/previews/thumbs/${t.category}.svg`;
     if (found) {
       await prisma.template.update({
         where: { id: found.id },
-        data: { description: t.description, paramSchema: t.paramSchema as any },
+        data: {
+          description: t.description,
+          paramSchema: t.paramSchema as any,
+          previewImageUrl,
+        },
       });
       console.log(`Updated stock template: ${t.name}`);
     } else {
@@ -204,6 +209,7 @@ async function main() {
           description: t.description,
           paramSchema: t.paramSchema as any,
           repoPath: `stock/${t.category}`,
+          previewImageUrl,
         },
       });
       console.log(`Created stock template: ${t.name}`);

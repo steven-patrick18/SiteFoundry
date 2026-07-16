@@ -247,10 +247,25 @@ export default function NewSitePage() {
               className={`card selectable ${t.id === templateId ? 'selected' : ''}`}
               onClick={() => setTemplateId(t.id)}
             >
-              <div className="card-preview"><span>{CATEGORY_LABELS[t.category] ?? t.category}</span></div>
+              <div className="card-preview">
+                {t.previewImageUrl ? (
+                  <img src={t.previewImageUrl} alt="" />
+                ) : (
+                  <span>{CATEGORY_LABELS[t.category] ?? t.category}</span>
+                )}
+              </div>
               <div className="card-body">
                 <div className="card-title">{t.name}</div>
                 <p className="sub">{t.description}</p>
+                <a
+                  className="button-link"
+                  href={`/previews/${t.category}/`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Preview demo
+                </a>
               </div>
             </div>
           ))}

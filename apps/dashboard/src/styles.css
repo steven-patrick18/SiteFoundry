@@ -360,6 +360,38 @@ label {
   width: 100%;
 }
 
+.card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.card-actions button {
+  margin-top: 0;
+  flex: 1;
+}
+
+.button-link {
+  display: inline-block;
+  background: transparent;
+  color: #93c5fd;
+  border: 1px solid #3b4358;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  text-decoration: none;
+  text-align: center;
+}
+
+.button-link:hover {
+  background: #1e2330;
+}
+
+a.card-preview {
+  display: flex;
+  cursor: zoom-in;
+}
+
 /* ── wizard ── */
 .wizard-steps {
   display: flex;

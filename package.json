@@ -12,6 +12,7 @@
     "build": "pnpm -r build",
     "seed": "tsx prisma/seed.ts",
     "db:dev": "tsx scripts/dev-db.ts",
+    "previews": "tsx scripts/build-previews.ts",
     "prisma": "prisma"
   },
   "devDependencies": {
