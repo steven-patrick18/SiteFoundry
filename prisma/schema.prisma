@@ -37,6 +37,7 @@ model Tenant {
   sites         Site[]
   builds        Build[]
   campaignLinks CampaignLink[]
+  leads         Lead[]
 
   @@map("tenants")
 }
@@ -190,6 +191,7 @@ model Site {
   callforgeNumber String?   @map("callforge_number")
   // install state machine (driven in M3)
   installStatus   String    @default("draft") @map("install_status")
+  leadWebhookUrl  String?   @map("lead_webhook_url")
   // SSL
   sslStatus       String    @default("none") @map("ssl_status")
   sslExpiresAt    DateTime? @map("ssl_expires_at") @db.Timestamptz()
@@ -213,6 +215,7 @@ model Site {
   template      Template       @relation(fields: [templateId], references: [id])
   builds        Build[]
   campaignLinks CampaignLink[]
+  leads         Lead[]
 
   @@index([tenantId])
   @@map("sites")
@@ -299,6 +302,23 @@ model SearchCache {
 
   @@index([engine, query, gl, fetchedAt])
   @@map("search_cache")
+}
+
+model Lead {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  siteId    String   @map("site_id") @db.Uuid
+  fields    Json // {name, email, phone, ...} exactly as submitted
+  consent   Boolean // §13: must be true to store — enforced in code AND DB
+  sourceUtm Json?    @map("source_utm")
+  ipHash    String?  @map("ip_hash") // salted SHA-256; raw IP never stored
+  at        DateTime @default(now()) @db.Timestamptz()
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, siteId, at])
+  @@map("leads")
 }
 
 model DeployEvent {

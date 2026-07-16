@@ -48,6 +48,9 @@ class FakeSshSession implements SshSession {
       this.failPattern = null; // fail once, succeed on retry
       return { code: 1, stdout: '', stderr: 'nginx: [emerg] simulated broken config' };
     }
+    if (/openssl x509 -enddate/.test(command)) {
+      return { code: 0, stdout: 'notAfter=Oct 14 12:00:00 2026 GMT\n', stderr: '' };
+    }
     return { code: 0, stdout: '', stderr: '' };
   }
   async uploadFile(local: string, remote: string) {
@@ -242,6 +245,21 @@ describe('install pipeline (simulated server, real build)', () => {
     const okSteps = events.filter((e) => ['ok', 'skipped', 'done'].includes(e.status)).map((e) => e.step);
     expect(okSteps).toEqual(['configuring_nginx', 'issuing_ssl', 'injecting_tracking', 'verifying', 'live']);
   }, 120_000);
+
+  it('force-SSL-renew runs certbot and updates ssl_expires_at (M5 acceptance)', async (ctx) => {
+    if (!dbAvailable) return ctx.skip();
+    session.commands.length = 0;
+    const result = await installer.renewSsl(tenantId, siteId);
+    expect(result.ssl_expires_at?.toISOString()).toBe('2026-10-14T12:00:00.000Z');
+
+    const joined = session.commands.join('\n');
+    expect(joined).toContain('certbot renew --cert-name');
+    expect(joined).toContain('--force-renewal');
+
+    const site = await admin.site.findUnique({ where: { id: siteId } });
+    expect(site!.sslStatus).toBe('active');
+    expect(site!.sslExpiresAt?.toISOString()).toBe('2026-10-14T12:00:00.000Z');
+  }, 60_000);
 
   it('rollback swaps a previous build artifact onto the server', async (ctx) => {
     if (!dbAvailable) return ctx.skip();

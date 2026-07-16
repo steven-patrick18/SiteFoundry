@@ -578,6 +578,25 @@ a.card-preview {
   font-weight: 600;
 }
 
+/* ── SSL alerts ── */
+.ssl-alerts {
+  margin-bottom: 16px;
+}
+
+.ssl-alert {
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 6px;
+  border: 1px solid;
+}
+
+.ssl-alert.notice { background: #172033; border-color: #1e3a8a; color: #93c5fd; }
+.ssl-alert.warning { background: #2a2113; border-color: #92400e; color: #fcd34d; }
+.ssl-alert.critical,
+.ssl-alert.expired,
+.ssl-alert.renewal_failed { background: #2a1215; border-color: #991b1b; color: #fca5a5; }
+
 /* ── product finder ── */
 .finder-results {
   max-height: 420px;

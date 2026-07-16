@@ -146,19 +146,21 @@ export class InstallController {
     );
   }
 
-  /** Certbot deploy-hook on the server posts here after auto-renewal. */
+  /** Certbot deploy-hook on the server posts here after auto-renewal (§9). */
   @Public()
   @Post('internal/ssl-renewed/:siteId')
   async sslRenewed(
     @Param('siteId') siteId: string,
     @Headers('x-internal-secret') secret: string | undefined,
-    @Body() body: { expires_at?: string },
+    @Body() body: { expires_at?: string; expires_at_raw?: string },
   ) {
     if (secret !== this.config.get<string>('INTERNAL_SECRET')) {
       throw new ForbiddenException('Bad internal secret');
     }
-    // owner-level update: renewal hooks carry no tenant context
-    const expiresAt = body?.expires_at ? new Date(body.expires_at) : null;
+    // owner-level update: renewal hooks carry no tenant context.
+    // expires_at_raw is openssl's "notAfter" text (e.g. "Oct 14 12:00:00 2026 GMT").
+    const raw = body?.expires_at ?? body?.expires_at_raw;
+    const expiresAt = raw ? new Date(raw) : null;
     await this.prisma.admin.site.updateMany({
       where: { id: siteId },
       data: {

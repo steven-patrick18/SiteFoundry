@@ -12,6 +12,3 @@ CREATE TABLE "search_cache" (
 
 -- CreateIndex
 CREATE INDEX "search_cache_engine_query_gl_fetched_at_idx" ON "search_cache"("engine", "query", "gl", "fetched_at");
-
--- Public shopping data cache: admin identity only, never the app role.
-REVOKE ALL ON TABLE "search_cache" FROM sitefoundry_app;

@@ -367,7 +367,42 @@ export class InstallerService {
         data: { sslStatus: 'active', sslExpiresAt: expiresAt },
       }),
     );
+
+    // §9: per-site certbot deploy hook — after every auto-renewal the server
+    // notifies the panel so ssl_expires_at stays current.
+    await this.installRenewalHook(ctx);
+
     return expiresAt ? `valid until ${expiresAt.toISOString().slice(0, 10)}` : 'issued';
+  }
+
+  /** Writes /etc/letsencrypt/renewal-hooks/deploy/sitefoundry-{site}.sh. */
+  private async installRenewalHook(ctx: InstallContext): Promise<void> {
+    const panelUrl = (this.config.get<string>('PANEL_PUBLIC_URL') ??
+      this.config.get<string>('APP_BASE_URL', '')).replace(/\/$/, '');
+    const secret = this.config.get<string>('INTERNAL_SECRET', '');
+    if (!panelUrl || !secret) return; // hook is best-effort
+    const hookName = `sitefoundry-${ctx.site.id.replace(/-/g, '').slice(0, 12)}.sh`;
+    const script = [
+      '#!/bin/sh',
+      `# SiteFoundry: notify panel after renewal of ${ctx.site.domain}`,
+      `case "$RENEWED_DOMAINS" in *${ctx.site.domain}*)`,
+      `  EXP=$(openssl x509 -enddate -noout -in "$RENEWED_LINEAGE/cert.pem" | cut -d= -f2)`,
+      `  curl -fsS -m 10 -X POST "${panelUrl}/api/v1/internal/ssl-renewed/${ctx.site.id}" \\`,
+      `    -H "content-type: application/json" -H "x-internal-secret: ${secret}" \\`,
+      `    -d "{\\"expires_at_raw\\":\\"$EXP\\"}" || true`,
+      ';; esac',
+      '',
+    ].join('\n');
+    const b64 = Buffer.from(script, 'utf8').toString('base64');
+    const cmd = [
+      `sudo -n mkdir -p /etc/letsencrypt/renewal-hooks/deploy`,
+      `echo ${b64} | base64 -d | sudo -n tee /etc/letsencrypt/renewal-hooks/deploy/${hookName} >/dev/null`,
+      `sudo -n chmod +x /etc/letsencrypt/renewal-hooks/deploy/${hookName}`,
+    ].join(' && ');
+    const result = await ctx.session.exec(cmd, 60_000);
+    if (result.code !== 0) {
+      this.logger.warn(`renewal hook install failed for ${ctx.site.domain}: ${outputTail(result.stderr || result.stdout)}`);
+    }
   }
 
   private async stepVerifyTracking(ctx: InstallContext): Promise<string> {

@@ -115,12 +115,16 @@ export class BuildService {
       throw new Error(`Build produced no index.html.\n${log.slice(-1000)}`);
     }
 
-    // 4. PushVault service worker at site root (§9 step 4)
-    if (input.tracking.pushvault_property_key) {
+    // 4. PushVault service worker at site root (§9 step 4). The stock
+    // template ships a real pv-sw.js in public/; only synthesize one for
+    // custom template packages that lack it.
+    if (input.tracking.pushvault_property_key && !existsSync(join(distDir, 'pv-sw.js'))) {
       await writeFile(
         join(distDir, 'pv-sw.js'),
-        '/* PushVault service worker placeholder - replaced by the real pv-sw.js (M5). */\n' +
-          "self.addEventListener('push', function () { /* PushVault M5 */ });\n",
+        "self.addEventListener('push', function (event) {\n" +
+          "  var data = {}; try { data = event.data ? event.data.json() : {}; } catch (e) {}\n" +
+          "  event.waitUntil(self.registration.showNotification(data.title || 'Update', { body: data.body || '' }));\n" +
+          '});\n',
       );
     }
 

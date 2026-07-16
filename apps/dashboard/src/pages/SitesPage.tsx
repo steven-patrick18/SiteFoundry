@@ -32,8 +32,16 @@ const STATUS_COLORS: Record<string, string> = {
   archived: '#4b5563',
 };
 
+interface SslAlert {
+  site_id: string;
+  domain: string;
+  level: string;
+  days_left: number | null;
+}
+
 export default function SitesPage() {
   const [sites, setSites] = useState<SiteRow[]>([]);
+  const [alerts, setAlerts] = useState<SslAlert[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [buildsFor, setBuildsFor] = useState<SiteRow | null>(null);
   const navigate = useNavigate();
@@ -41,6 +49,7 @@ export default function SitesPage() {
   const reload = useCallback(async () => {
     try {
       setSites(await api<SiteRow[]>('/sites'));
+      setAlerts(await api<SslAlert[]>('/alerts/ssl'));
     } catch (err: any) {
       setError(err.message);
     }
@@ -57,6 +66,22 @@ export default function SitesPage() {
         <button onClick={() => navigate('/sites/new')}>+ New Site</button>
       </div>
       {error && <div className="error">{error}</div>}
+
+      {alerts.length > 0 && (
+        <div className="ssl-alerts">
+          {alerts.map((a) => (
+            <div key={a.site_id} className={`ssl-alert ${a.level}`}>
+              🔒 <strong>{a.domain}</strong>{' '}
+              {a.level === 'expired' ? 'SSL certificate EXPIRED'
+                : a.level === 'renewal_failed' ? 'SSL renewal FAILED'
+                : `SSL expires in ${a.days_left} day${a.days_left === 1 ? '' : 's'}`}
+              <button style={{ marginLeft: 10, padding: '2px 10px', fontSize: 11 }} onClick={() => navigate(`/sites/${a.site_id}`)}>
+                Open record
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {sites.length === 0 ? (
         <p className="placeholder">

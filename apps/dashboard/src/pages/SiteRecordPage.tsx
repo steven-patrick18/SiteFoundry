@@ -5,7 +5,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { api, apiStream } from '../lib/api';
+import { api, apiStream, getToken } from '../lib/api';
 
 interface SiteFull {
   id: string;
@@ -30,6 +30,7 @@ interface SiteFull {
   googleAdsTag: { conversion_id?: string; conversion_label?: string; remarketing_id?: string } | null;
   bingUetTag: string | null;
   pushvaultPropertyKey: string | null;
+  leadWebhookUrl: string | null;
   notes: string | null;
   client: { id: string; name: string; company: string | null; gstin: string | null; contactName: string | null; email: string | null; phone: string | null; address: string | null; city: string | null };
   server: { id: string; name: string; host: string; status: string; baseProvisioned: boolean; facts: any };
@@ -332,13 +333,8 @@ export default function SiteRecordPage() {
           )}
         </section>
 
-        {/* ── 7.9 Leads (M5) ── */}
-        {site.template.category === 'lead_page' && (
-          <section className="section-card">
-            <h2>Leads</h2>
-            <p className="sub">Consented lead capture, CSV export, and the delivery webhook land with Milestone M5.</p>
-          </section>
-        )}
+        {/* ── 7.9 Leads ── */}
+        <LeadsSection site={site} setNotice={setNotice} setError={setError} />
 
         {/* ── 7.10 Activity log ── */}
         <section className="section-card wide">
@@ -357,6 +353,103 @@ export default function SiteRecordPage() {
         </section>
       </div>
     </>
+  );
+}
+
+function LeadsSection({
+  site, setNotice, setError,
+}: {
+  site: SiteFull;
+  setNotice: (m: string | null) => void;
+  setError: (m: string | null) => void;
+}) {
+  const [leads, setLeads] = useState<Array<{ id: string; fields: Record<string, string>; sourceUtm: Record<string, string> | null; at: string }>>([]);
+  const [webhook, setWebhook] = useState(site.leadWebhookUrl ?? '');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    api<typeof leads>(`/sites/${site.id}/leads`).then(setLeads).catch(() => undefined);
+  }, [site.id]);
+
+  async function saveWebhook() {
+    setBusy(true);
+    setError(null);
+    try {
+      await api(`/sites/${site.id}/leads/webhook`, {
+        method: 'PATCH',
+        body: JSON.stringify({ url: webhook.trim() || null }),
+      });
+      setNotice(webhook.trim() ? 'Webhook saved' : 'Webhook cleared');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function testWebhook() {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await api<{ delivered: boolean }>(`/sites/${site.id}/leads/webhook-test`, { method: 'POST' });
+      setNotice(res.delivered ? 'Test payload delivered ✓' : 'Webhook did not accept the test payload');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function exportCsv() {
+    const res = await fetch(`/api/v1/sites/${site.id}/leads/export`, {
+      headers: { authorization: `Bearer ${getToken()}` },
+    });
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${site.domain}-leads.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    setNotice('CSV exported (audit-logged)');
+  }
+
+  const fieldKeys = [...new Set(leads.flatMap((l) => Object.keys(l.fields)))].slice(0, 4);
+
+  return (
+    <section className="section-card wide">
+      <h2>Leads ({leads.length})</h2>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', marginBottom: 12 }}>
+        <label style={{ margin: 0, flex: 1 }}>
+          Delivery webhook (POST JSON on every lead)
+          <input value={webhook} onChange={(e) => setWebhook(e.target.value)} placeholder="https://hooks.example.com/leads" />
+        </label>
+        <button disabled={busy} onClick={() => void saveWebhook()}>Save</button>
+        <button disabled={busy || !site.leadWebhookUrl} onClick={() => void testWebhook()}>Test send</button>
+        <button disabled={leads.length === 0} onClick={() => void exportCsv()}>Export CSV</button>
+      </div>
+      {leads.length === 0 ? (
+        <p className="sub">No leads yet — submissions from the site's consented form appear here.</p>
+      ) : (
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Submitted</th>
+              {fieldKeys.map((k) => <th key={k}>{k}</th>)}
+              <th>Campaign</th>
+            </tr>
+          </thead>
+          <tbody>
+            {leads.slice(0, 25).map((l) => (
+              <tr key={l.id}>
+                <td className="sub">{new Date(l.at).toLocaleString()}</td>
+                {fieldKeys.map((k) => <td key={k}>{l.fields[k] ?? '—'}</td>)}
+                <td className="sub">{l.sourceUtm?.campaign ?? '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
   );
 }
 

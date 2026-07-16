@@ -121,12 +121,32 @@
       }
     }, { capture: true, passive: true });
 
-    /* lead form (full consented capture lands with the leads API, M5) */
+    /* consented lead capture -> POST /public/lead (§10) */
+    var LEAD_URL = TRACK_URL ? TRACK_URL.replace(/\/track$/, '/lead') : '';
     document.querySelectorAll('form[data-sf-lead]').forEach(function (form) {
       form.addEventListener('submit', function (e) {
         e.preventDefault();
-        send('lead_submit', { form: 'lead' });
-        form.innerHTML = '<p style="text-align:center;font-weight:600">Thank you! We’ll be in touch shortly.</p>';
+        var consent = form.querySelector('input[name=consent]');
+        if (!consent || !consent.checked) return; // consent is mandatory
+        var fields = {};
+        [].forEach.call(form.querySelectorAll('input[name]'), function (el) {
+          if (el.name !== 'consent' && el.value) fields[el.name] = el.value;
+        });
+        var payload = { site_key: SITE_KEY, fields: fields, consent: true };
+        var u = utms();
+        for (var k in u) payload[k] = u[k];
+        var done = function () {
+          send('lead_submit', { form: 'lead' });
+          form.innerHTML =
+            '<p style="text-align:center;font-weight:600">Thank you! We’ll be in touch shortly.</p>';
+        };
+        if (LEAD_URL) {
+          fetch(LEAD_URL, { method: 'POST', body: JSON.stringify(payload), keepalive: true })
+            .then(done)
+            .catch(done); // never trap the visitor on a network hiccup
+        } else {
+          done();
+        }
       });
     });
 

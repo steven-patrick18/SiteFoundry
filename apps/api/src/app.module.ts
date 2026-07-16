@@ -14,6 +14,9 @@ import { SitesModule } from './sites/sites.module';
 import { InstallerModule } from './installer/installer.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { DiscoveryModule } from './discovery/discovery.module';
+import { LeadsModule } from './leads/leads.module';
+import { SslModule } from './ssl/ssl.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -34,6 +37,9 @@ import { DiscoveryModule } from './discovery/discovery.module';
     InstallerModule,
     AnalyticsModule,
     DiscoveryModule,
+    LeadsModule,
+    SslModule,
+    ScheduleModule.forRoot(),
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
