@@ -122,11 +122,14 @@ sudo -u "$APP_USER" HOME="/home/$APP_USER" bash -lc "cd $APP_DIR && pnpm install
 # align the restricted app role's password with .env (RLS migration created it)
 sudo -u postgres psql -v ON_ERROR_STOP=1 -c "ALTER ROLE sitefoundry_app WITH PASSWORD '${APP_DB_PASS}';" 2>/dev/null || true
 
-# allow the app user to restart its own services (for in-app updates)
+# allow the app user to restart its own services (for in-app updates).
+# List both /bin and /usr/bin paths so it matches regardless of how sudo
+# resolves systemctl on this distro.
 cat > /etc/sudoers.d/sitefoundry <<SUDO
-${APP_USER} ALL=(root) NOPASSWD: /bin/systemctl restart sitefoundry-api, /bin/systemctl restart sitefoundry-worker
+${APP_USER} ALL=(root) NOPASSWD: /bin/systemctl restart sitefoundry-api, /bin/systemctl restart sitefoundry-worker, /usr/bin/systemctl restart sitefoundry-api, /usr/bin/systemctl restart sitefoundry-worker
 SUDO
 chmod 440 /etc/sudoers.d/sitefoundry
+visudo -cf /etc/sudoers.d/sitefoundry >/dev/null
 
 # ── systemd services ──────────────────────────────────────────────────────
 cp "$APP_DIR/deploy/sitefoundry-api.service" /etc/systemd/system/

@@ -26,7 +26,8 @@ pnpm -r build
 # request) can finish before the process is replaced.
 echo "-- scheduling restart"
 if command -v systemctl >/dev/null 2>&1; then
-  nohup sh -c 'sleep 2; sudo -n systemctl restart sitefoundry-api sitefoundry-worker' >/dev/null 2>&1 &
+  # Restart each unit separately so it matches the per-unit sudoers rule.
+  nohup sh -c 'sleep 2; sudo -n systemctl restart sitefoundry-api; sudo -n systemctl restart sitefoundry-worker' >/dev/null 2>&1 &
 fi
 
 echo "== update complete: now at $(git rev-parse --short HEAD) =="
