@@ -35,6 +35,10 @@ const envSchema = z.object({
   SERPAPI_KEY: z.string().default(''),
   // Salt for lead IP hashing (§13: raw IPs are never stored)
   LEAD_IP_SALT: z.string().default('dev-lead-salt'),
+  // Panel self-update from git (admin-only). Off by default; the production
+  // deploy sets it to true. PANEL_PUBLIC_URL is the panel's own https URL.
+  ALLOW_SELF_UPDATE: z.string().default('false'),
+  PANEL_PUBLIC_URL: z.string().default('http://localhost:3000'),
   JWT_SECRET: z.string().default('dev-only-jwt-secret'),
   INTERNAL_SECRET: z.string().default('dev-only-internal-secret'),
   APP_BASE_URL: z.string().default('http://localhost:5173'),

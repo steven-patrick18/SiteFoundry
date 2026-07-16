@@ -578,6 +578,21 @@ a.card-preview {
   font-weight: 600;
 }
 
+.update-log {
+  margin-top: 12px;
+  background: #10131b;
+  border: 1px solid #262b38;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: ui-monospace, monospace;
+  font-size: 11.5px;
+  color: #9ca3af;
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 /* ── SSL alerts ── */
 .ssl-alerts {
   margin-bottom: 16px;

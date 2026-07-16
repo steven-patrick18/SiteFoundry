@@ -223,6 +223,8 @@ export default function SettingsPage() {
         )}
       </div>
 
+      <UpdateCard setError={setError} setNotice={setNotice} />
+
       {showAdd && (
         <AddUserModal
           onClose={() => setShowAdd(false)}
@@ -233,6 +235,121 @@ export default function SettingsPage() {
         />
       )}
     </>
+  );
+}
+
+interface VersionInfo {
+  short: string;
+  subject: string;
+  date: string;
+  branch: string;
+  behind: number;
+  remote_short: string | null;
+  update_available: boolean;
+  self_update_enabled: boolean;
+  is_git: boolean;
+}
+
+function UpdateCard({
+  setError, setNotice,
+}: {
+  setError: (m: string | null) => void;
+  setNotice: (m: string | null) => void;
+}) {
+  const [v, setV] = useState<VersionInfo | null>(null);
+  const [busy, setBusy] = useState<'check' | 'update' | null>(null);
+  const [log, setLog] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      setV(await api<VersionInfo>('/settings/update'));
+    } catch (err: any) {
+      if (err.status !== 403) setError(err.message);
+    }
+  }, [setError]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  async function check() {
+    setBusy('check');
+    setError(null);
+    try {
+      const info = await api<VersionInfo>('/settings/update');
+      setV(info);
+      setNotice(info.update_available ? `Update available (${info.behind} commit${info.behind === 1 ? '' : 's'} behind)` : 'Panel is up to date');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function runUpdate() {
+    if (!window.confirm('Pull the latest code, run migrations, rebuild, and restart the panel? The panel will be briefly unavailable.')) return;
+    setBusy('update');
+    setError(null);
+    setLog(null);
+    try {
+      const res = await api<{ from: string; to: string; log: string; restarting: boolean }>('/settings/update', { method: 'POST' });
+      setLog(res.log.slice(-4000));
+      setNotice(`Updated ${res.from} → ${res.to}${res.restarting ? ' — panel is restarting, this page will reconnect shortly' : ''}`);
+      if (res.restarting) setTimeout(() => window.location.reload(), 8000);
+      else await load();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  if (!v) return null;
+
+  return (
+    <section className="section-card wide" style={{ marginTop: 16 }}>
+      <h2>Software Update</h2>
+      {!v.is_git ? (
+        <p className="sub">This panel is not running from a git checkout, so in-app updates aren't available. Deploy from git to enable this.</p>
+      ) : (
+        <>
+          <div className="kv"><span>Current</span><span className="mono">{v.short}</span> — {v.subject}</div>
+          <div className="kv"><span>Branch</span><span className="mono">{v.branch}</span></div>
+          <div className="kv"><span>Committed</span>{v.date ? new Date(v.date).toLocaleString() : '—'}</div>
+          <div className="kv">
+            <span>Status</span>
+            {v.update_available ? (
+              <span>
+                <span className="badge" style={{ background: '#eab308' }}>update available</span>
+                {' '}{v.behind} commit{v.behind === 1 ? '' : 's'} behind
+                {v.remote_short && <span className="mono"> (origin @ {v.remote_short})</span>}
+              </span>
+            ) : (
+              <span className="badge" style={{ background: '#22c55e' }}>up to date</span>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+            <button disabled={busy !== null} onClick={() => void check()}>
+              {busy === 'check' ? 'Checking…' : 'Check for updates'}
+            </button>
+            <button
+              disabled={busy !== null || !v.update_available || !v.self_update_enabled}
+              title={!v.self_update_enabled ? 'Set ALLOW_SELF_UPDATE=true on the panel server' : undefined}
+              onClick={() => void runUpdate()}
+            >
+              {busy === 'update' ? 'Updating…' : 'Update now'}
+            </button>
+          </div>
+          {!v.self_update_enabled && (
+            <p className="sub" style={{ marginTop: 8 }}>
+              In-app updates are disabled here. On the panel server run{' '}
+              <span className="mono">bash deploy/update.sh</span> (or enable ALLOW_SELF_UPDATE=true).
+            </p>
+          )}
+          {log && (
+            <pre className="update-log">{log}</pre>
+          )}
+        </>
+      )}
+    </section>
   );
 }
 
