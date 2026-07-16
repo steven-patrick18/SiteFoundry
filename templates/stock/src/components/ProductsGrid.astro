@@ -1,5 +1,6 @@
 ---
 import { params } from '../lib/config.js';
+import OfferMeta from './OfferMeta.astro';
 const products = Array.isArray(params.products) ? params.products : [];
 const cta = params.hero?.cta_text ?? 'Buy Now';
 ---
@@ -9,9 +10,11 @@ const cta = params.hero?.cta_text ?? 'Buy Now';
     <div class="grid">
       {products.map((p) => (
         <div class="product">
+          {p.badge && <span class="badge-chip">{p.badge}</span>}
           {p.image_url && <img src={p.image_url} alt={p.title} loading="lazy" />}
           <div class="pbody">
             <h3>{p.title}</h3>
+            <OfferMeta product={p} />
             {p.price && (
               <div class="price">
                 {p.price}

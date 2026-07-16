@@ -59,6 +59,12 @@ function baseParamSchema(opts: {
                 image_url: { type: 'string', format: 'uri', title: 'Image URL' },
                 price: { type: 'string', title: 'Price' },
                 compare_price: { type: 'string', title: 'Compare-at price' },
+                rating: { type: 'number', title: 'Rating (0-5)', minimum: 0, maximum: 5 },
+                review_count: { type: 'number', title: 'Review count' },
+                store_name: { type: 'string', title: 'Seller / store name' },
+                delivery_time: { type: 'string', title: 'Delivery estimate (e.g. "Free delivery by Mon, Jul 20")' },
+                shipping_cost: { type: 'string', title: 'Shipping (e.g. "Free shipping")' },
+                badge: { type: 'string', title: 'Badge (e.g. "Best seller")' },
                 bullets: {
                   type: 'array', title: 'Bullet points', maxItems: 5,
                   items: { type: 'string' },

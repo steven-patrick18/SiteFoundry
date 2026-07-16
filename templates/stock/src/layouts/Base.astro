@@ -78,7 +78,21 @@ const fontStack = `${brand.font ?? 'Inter'}, system-ui, -apple-system, 'Segoe UI
       main { padding: 46px 0; }
       h2.section { text-align: center; font-size: 26px; margin-bottom: 26px; }
       .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
-      .product { border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+      .product { border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; position: relative; }
+      .badge-chip { position: absolute; top: 10px; left: 10px; background: #1f2937; color: #fff; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; z-index: 1; }
+      .badge-chip.inline { position: static; display: inline-block; margin-left: 8px; background: #eef2ff; color: #3730a3; }
+      .rating { display: flex; align-items: center; gap: 5px; font-size: 13px; }
+      .stars { color: #f59e0b; letter-spacing: 1px; font-size: 13.5px; }
+      .rating-num { font-weight: 600; color: #374151; }
+      .reviews { color: #6b7280; }
+      .store { font-size: 12.5px; color: #4b5563; }
+      .delivery { font-size: 12.5px; color: #15803d; font-weight: 500; }
+      .delivery .ship { font-weight: 700; }
+      .compare-scroll { overflow-x: auto; }
+      .compare-option { display: flex; gap: 12px; align-items: flex-start; min-width: 220px; }
+      .compare-option .thumb { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; flex-shrink: 0; background: #f3f4f6; }
+      .delivery-cell { font-size: 13px; color: #15803d; white-space: nowrap; }
+      .delivery-cell .ship { font-weight: 700; }
       .product img { width: 100%; aspect-ratio: 4/3; object-fit: cover; background: #f3f4f6; }
       .product .pbody { padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
       .product h3 { font-size: 16px; }

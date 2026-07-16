@@ -222,6 +222,15 @@ function ScalarField({
     input = (
       <input type="color" value={current || '#4f46e5'} onChange={(e) => onChange(e.target.value)} />
     );
+  } else if (schema.type === 'number' || schema.type === 'integer') {
+    input = (
+      <input
+        type="number"
+        step="any"
+        value={current}
+        onChange={(e) => onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+      />
+    );
   } else {
     input = (
       <input

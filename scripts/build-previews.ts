@@ -28,52 +28,75 @@ function photo(label: string, hueA: number, hueB: number, emoji = ''): string {
 
 const DEST = 'https://store.acme-demo.example';
 
+// USA-market demo (dollar prices, US delivery estimates, US contact block)
 const baseTrust = {
   business_name: 'Acme Comfort Co',
   contact_email: 'support@acmecomfort.example',
-  contact_phone: '+91 99999 88888',
-  address: '12 MG Road, Connaught Place, New Delhi 110001',
+  contact_phone: '+1 (415) 555-0134',
+  address: '450 Market Street, Suite 700, San Francisco, CA 94105',
 };
 
 const baseLegal = {
   privacy_policy_md:
     '## Your privacy matters\n\nWe collect only the analytics needed to run this page (page views, clicks) and any details you submit voluntarily. We never sell personal data. Contact us any time at support@acmecomfort.example to access or delete your data.',
   terms_md:
-    '## Terms of use\n\nPrices and availability are shown by the destination store at checkout. All trademarks belong to their owners. Disputes are governed by the laws of India.',
+    '## Terms of use\n\nPrices and availability are shown by the destination store at checkout. All trademarks belong to their owners. Disputes are governed by the laws of the State of California, USA.',
   affiliate_disclosure_md:
     '**Disclosure:** We may earn a commission when you buy through links on this page. This never affects the price you pay.',
 };
 
 const products = [
   {
-    title: 'ArcticPro 1.5T Inverter Split AC',
-    image_url: photo('ArcticPro 1.5T', 210, 250, '❄️'),
-    price: '₹32,990',
-    compare_price: '₹41,990',
-    bullets: ['5-star energy rating', 'Cools 18m² in 8 minutes', '10-year compressor warranty'],
-    target_url: `${DEST}/products/arcticpro-15t`,
+    title: 'ArcticPro 12,000 BTU Smart Inverter Window AC',
+    image_url: photo('ArcticPro 12K BTU', 210, 250, '❄️'),
+    price: '$329.99',
+    compare_price: '$429.99',
+    rating: 4.7,
+    review_count: 2841,
+    store_name: 'Acme Comfort Store',
+    shipping_cost: 'Free delivery',
+    delivery_time: 'Get it by Tue, Jul 21',
+    badge: 'Best seller',
+    bullets: ['ENERGY STAR certified', 'Cools up to 550 sq ft', 'WiFi + voice control', '10-year compressor warranty'],
+    target_url: `${DEST}/products/arcticpro-12k`,
   },
   {
-    title: 'BreezeMax Window AC 1T',
-    image_url: photo('BreezeMax 1T', 190, 160, '🌬️'),
-    price: '₹24,490',
-    compare_price: '₹28,900',
-    bullets: ['Best budget pick', 'Easy self-install', 'Low-noise night mode'],
-    target_url: `${DEST}/products/breezemax-1t`,
+    title: 'BreezeMax 8,000 BTU Window AC',
+    image_url: photo('BreezeMax 8K', 190, 160, '🌬️'),
+    price: '$229.99',
+    compare_price: '$279.99',
+    rating: 4.4,
+    review_count: 1203,
+    store_name: 'Acme Comfort Store',
+    shipping_cost: 'Free delivery',
+    delivery_time: 'Get it by Wed, Jul 22',
+    badge: 'Budget pick',
+    bullets: ['Cools up to 350 sq ft', 'Easy self-install kit', 'Quiet 52 dB night mode'],
+    target_url: `${DEST}/products/breezemax-8k`,
   },
   {
-    title: 'CoolNest Portable AC',
+    title: 'CoolNest 10,000 BTU Portable AC',
     image_url: photo('CoolNest Portable', 280, 320, '🧊'),
-    price: '₹27,999',
-    bullets: ['No installation needed', 'Moves room to room', 'Dehumidifier built in'],
+    price: '$289.99',
+    rating: 4.2,
+    review_count: 687,
+    store_name: 'Acme Comfort Store',
+    shipping_cost: '$9.99 shipping',
+    delivery_time: 'Get it Fri, Jul 24',
+    bullets: ['No installation needed', 'Rolls room to room', 'Built-in dehumidifier'],
     target_url: `${DEST}/products/coolnest-portable`,
   },
   {
-    title: 'ZenAir Tower Fan + Cooler',
+    title: 'ZenAir Evaporative Tower Cooler',
     image_url: photo('ZenAir Tower', 150, 120, '🍃'),
-    price: '₹8,490',
-    compare_price: '₹11,000',
-    bullets: ['Uses 90% less power', 'Remote + timer', 'Great for small rooms'],
+    price: '$89.99',
+    compare_price: '$119.99',
+    rating: 4.0,
+    review_count: 412,
+    store_name: 'Acme Comfort Store',
+    shipping_cost: 'Free delivery',
+    delivery_time: 'Get it by Tue, Jul 21',
+    bullets: ['Uses 90% less power', 'Remote + 8h timer', 'Great for small rooms'],
     target_url: `${DEST}/products/zenair-tower`,
   },
 ];
@@ -81,30 +104,30 @@ const products = [
 function demoParams(category: string) {
   const heroByCategory: Record<string, any> = {
     ecom_showcase: {
-      headline: 'Beat the Delhi heat for less',
-      subheadline: 'Hand-picked cooling deals, updated daily and price-checked against 6 stores.',
+      headline: 'Beat the summer heat for less',
+      subheadline: 'Hand-picked cooling deals for the USA, price-checked daily across 6 major stores.',
       cta_text: 'Shop All Deals',
       hero_image_url: photo('Summer Cooling Sale', 205, 260, '☀️'),
     },
     offer_awareness: {
       headline: 'ArcticPro Summer Sale — up to 40% off',
-      subheadline: 'India’s highest-rated inverter AC, now at its lowest price of the year.',
+      subheadline: 'America’s highest-rated smart window AC, now at its lowest price of the year.',
       cta_text: 'Claim the Offer',
       hero_image_url: photo('Limited-Time Offer', 10, 40, '🔥'),
     },
     comparison: {
-      headline: 'Best AC for Indian summers (2026 tested)',
-      subheadline: 'We ran 4 bestsellers for 30 days. One clear winner.',
+      headline: 'Best window AC of 2026 (USA, lab tested)',
+      subheadline: 'We ran 4 bestsellers for 30 days — compared on price, delivery speed, and noise. One clear winner.',
       cta_text: 'Check Price',
     },
     lead_page: {
       headline: 'Free AC installation quote in 2 hours',
-      subheadline: 'Certified technicians across Delhi NCR. No visit charges.',
+      subheadline: 'Licensed HVAC technicians across the Bay Area. No call-out fees.',
       cta_text: 'Get My Quote',
       hero_image_url: photo('Certified Technicians', 220, 180, '🛠️'),
     },
     prelander: {
-      headline: 'Why 40,000 Delhi homes switched to inverter ACs',
+      headline: 'Why 40,000 US households switched to inverter ACs',
       subheadline: 'The electricity-bill math nobody shows you',
       cta_text: 'See the Deal',
       hero_image_url: photo('The Inverter Switch', 260, 300, '⚡'),
@@ -140,8 +163,8 @@ function demoParams(category: string) {
     legal: baseLegal,
     ad_claims:
       category === 'lead_page'
-        ? ['Free quote in 2 hours', 'No visit charges', 'Certified technicians']
-        : ['Free shipping over ₹500', '30-day easy returns', 'Lowest price of the season'],
+        ? ['Free quote in 2 hours', 'No call-out fees', 'Licensed HVAC technicians']
+        : ['Free 2-day shipping', '30-day easy returns', 'Price-match guarantee'],
   };
 }
 

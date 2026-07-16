@@ -1,0 +1,27 @@
+---
+// Shopping-style offer metadata: star rating + review count, seller,
+// delivery estimate, shipping. Shared by product cards and the comparison
+// table. All fields optional — rows render only when provided.
+const { product } = Astro.props;
+const rating = typeof product.rating === 'number' ? Math.max(0, Math.min(5, product.rating)) : null;
+const stars = rating !== null ? '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating)) : '';
+const reviews =
+  typeof product.review_count === 'number' && product.review_count > 0
+    ? product.review_count.toLocaleString('en-US')
+    : null;
+---
+{rating !== null && (
+  <div class="rating" aria-label={`Rated ${rating} out of 5`}>
+    <span class="stars">{stars}</span>
+    <span class="rating-num">{rating.toFixed(1)}</span>
+    {reviews && <span class="reviews">({reviews})</span>}
+  </div>
+)}
+{product.store_name && <div class="store">{product.store_name}</div>}
+{(product.delivery_time || product.shipping_cost) && (
+  <div class="delivery">
+    {product.shipping_cost && <span class="ship">{product.shipping_cost}</span>}
+    {product.shipping_cost && product.delivery_time && <span> · </span>}
+    {product.delivery_time && <span>{product.delivery_time}</span>}
+  </div>
+)}
