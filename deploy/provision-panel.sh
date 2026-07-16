@@ -92,7 +92,10 @@ PORT=3000
 DATABASE_URL=postgresql://sitefoundry:${DB_PASS}@localhost:5432/sitefoundry
 APP_DATABASE_URL=postgresql://sitefoundry_app:${APP_DB_PASS}@localhost:5432/sitefoundry
 REDIS_URL=redis://localhost:6379
-JOBS_MODE=bullmq
+# inline: installs run in the API process so live SSE progress reaches the
+# browser. 'bullmq' offloads to the worker but needs a Redis pub/sub bridge
+# for progress (not yet implemented) — use inline until then.
+JOBS_MODE=inline
 KMS_PROVIDER=local-dev
 LOCAL_KMS_MASTER_KEY=$(openssl rand -hex 32)
 JWT_SECRET=$(openssl rand -hex 32)

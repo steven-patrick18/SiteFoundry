@@ -79,6 +79,10 @@ export class UpdateSiteDto {
   @IsOptional() @IsString() @MinLength(1) @MaxLength(120)
   name?: string;
 
+  /** Change the template (layout) of an existing site; params carry over. */
+  @IsOptional() @IsUUID()
+  template_id?: string;
+
   @IsOptional() @IsObject()
   params?: Record<string, unknown>;
 

@@ -249,7 +249,9 @@ export default function NewSitePage() {
       const body = buildBody();
       let id = siteId;
       if (id) {
-        const { client_id, server_id, template_id, domain: _d, ...patch } = body as any;
+        // client_id/server_id/domain are fixed after creation; template_id
+        // may change (layout swap) and is included in the patch.
+        const { client_id, server_id, domain: _d, ...patch } = body as any;
         await api(`/sites/${id}`, { method: 'PATCH', body: JSON.stringify(patch) });
       } else {
         const site = await api<{ id: string }>('/sites', { method: 'POST', body: JSON.stringify(body) });

@@ -110,9 +110,23 @@ export class SitesService {
     return this.prisma.withTenant(user.tenantId, async (tx) => {
       const before = await tx.site.findFirst({ where: { id } });
       if (!before) throw new NotFoundException('Site not found');
+
+      // Optional template (layout) swap — params are shared across templates.
+      let templateChange = {};
+      if (dto.template_id && dto.template_id !== before.templateId) {
+        const template = await tx.template.findFirst({
+          where: { id: dto.template_id, status: 'active' },
+        });
+        if (!template) {
+          throw new BadRequestException('template_id: template not found or deprecated');
+        }
+        templateChange = { templateId: template.id, templateVersion: template.version };
+      }
+
       const after = await tx.site.update({
         where: { id },
         data: {
+          ...templateChange,
           ...(dto.name !== undefined ? { name: dto.name } : {}),
           ...(dto.params !== undefined ? { params: dto.params as any } : {}),
           ...(dto.destination_url !== undefined ? { destinationUrl: dto.destination_url } : {}),
