@@ -1,0 +1,20 @@
+---
+// Consented lead capture (M5 wires submission to /public/lead via sf.js).
+import { params } from '../lib/config.js';
+const form = params.lead_form ?? {};
+---
+<section class="wrap" id="lead">
+  <h2 class="section">{form.heading ?? 'Get a free quote'}</h2>
+  <form class="lead" method="post" action="#" data-sf-lead>
+    <input type="text" name="name" placeholder="Your name" required />
+    <input type="email" name="email" placeholder="Email address" required />
+    {form.collect_phone !== false && (
+      <input type="tel" name="phone" placeholder="Phone number" required />
+    )}
+    <label class="consent">
+      <input type="checkbox" name="consent" required />
+      <span>{form.consent_text ?? 'I agree to be contacted about this enquiry.'}</span>
+    </label>
+    <button type="submit">{form.submit_text ?? 'Request Callback'}</button>
+  </form>
+</section>

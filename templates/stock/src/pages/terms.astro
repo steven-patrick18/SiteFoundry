@@ -1,0 +1,15 @@
+---
+import Base from '../layouts/Base.astro';
+import TrustFooter from '../components/TrustFooter.astro';
+import { params } from '../lib/config.js';
+import { marked } from 'marked';
+---
+<Base title={`Terms & Conditions — ${params.trust?.business_name ?? ''}`}>
+  <main class="wrap">
+    <article class="prose">
+      <h1>Terms &amp; Conditions</h1>
+      <div set:html={marked.parse(params.legal?.terms_md ?? '')} />
+    </article>
+  </main>
+  <TrustFooter />
+</Base>

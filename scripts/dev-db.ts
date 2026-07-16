@@ -15,6 +15,9 @@ async function main() {
     password: 'sitefoundry',
     port: 55432,
     persistent: true,
+    // UTF8 like production — Windows initdb would otherwise pick WIN1252,
+    // which cannot store build-log characters and breaks migrations.
+    initdbFlags: ['--encoding=UTF8', '--locale=C'],
   });
 
   if (!existsSync(join(DATA_DIR, 'PG_VERSION'))) {

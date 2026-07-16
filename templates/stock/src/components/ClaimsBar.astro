@@ -1,0 +1,15 @@
+---
+// Every ad claim must literally appear on the page (§8) — this bar renders
+// them verbatim so the claim-match scan passes.
+import { params } from '../lib/config.js';
+const claims = Array.isArray(params.ad_claims) ? params.ad_claims : [];
+---
+{claims.length > 0 && (
+  <section class="claims" id="claims">
+    <div class="wrap">
+      <ul>
+        {claims.map((claim) => <li>{claim}</li>)}
+      </ul>
+    </div>
+  </section>
+)}

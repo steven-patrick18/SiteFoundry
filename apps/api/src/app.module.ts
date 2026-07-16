@@ -11,6 +11,7 @@ import { ServersModule } from './servers/servers.module';
 import { ClientsModule } from './clients/clients.module';
 import { TemplatesModule } from './templates/templates.module';
 import { SitesModule } from './sites/sites.module';
+import { InstallerModule } from './installer/installer.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { SitesModule } from './sites/sites.module';
     ClientsModule,
     TemplatesModule,
     SitesModule,
+    InstallerModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

@@ -1,0 +1,17 @@
+---
+import Base from '../layouts/Base.astro';
+import TrustFooter from '../components/TrustFooter.astro';
+import { params } from '../lib/config.js';
+import { marked } from 'marked';
+
+const disclosure = (params.legal?.affiliate_disclosure_md ?? '').trim();
+---
+<Base title={`Disclosure — ${params.trust?.business_name ?? ''}`}>
+  <main class="wrap">
+    <article class="prose">
+      <h1>Advertising Disclosure</h1>
+      <div set:html={marked.parse(disclosure || 'This page may contain promotional content.')} />
+    </article>
+  </main>
+  <TrustFooter />
+</Base>

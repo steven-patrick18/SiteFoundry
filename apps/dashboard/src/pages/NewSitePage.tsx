@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { api } from '../lib/api';
+import { api, apiStream } from '../lib/api';
 import SchemaForm from '../components/SchemaForm';
 import { ClientModal, Client } from './ClientsPage';
 import { CATEGORY_LABELS, TemplateSummary } from './TemplatesPage';
@@ -23,6 +23,13 @@ interface PreflightResult {
   ok: boolean;
   errors: { field: string; message: string }[];
   pending_build_checks: string[];
+}
+
+interface InstallEvent {
+  step: string;
+  title: string;
+  status: 'start' | 'ok' | 'fail' | 'done' | 'skipped';
+  detail?: string;
 }
 
 const STEPS = ['Template', 'Client & Domain', 'Server', 'Parameters', 'Tracking', 'Pre-flight'];
@@ -64,6 +71,33 @@ export default function NewSitePage() {
   const [preflight, setPreflight] = useState<PreflightResult | null>(null);
   const [checklist, setChecklist] = useState<boolean[]>(POLICY_CHECKLIST.map(() => false));
   const [busy, setBusy] = useState(false);
+  const [installLog, setInstallLog] = useState<InstallEvent[] | null>(null);
+  const [installing, setInstalling] = useState(false);
+
+  /** §6 step 7 — live install stream; `from` resumes a failed install. */
+  async function runInstall(from?: string) {
+    if (!siteId) return;
+    setInstalling(true);
+    setInstallLog([]);
+    try {
+      const path = from
+        ? `/sites/${siteId}/install?from=${from}`
+        : `/sites/${siteId}/install`;
+      for await (const event of apiStream<InstallEvent>(path)) {
+        setInstallLog((log) => {
+          const next = [...(log ?? [])];
+          const i = next.findIndex((e) => e.step === event.step);
+          if (i >= 0) next[i] = event;
+          else next.push(event);
+          return next;
+        });
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setInstalling(false);
+    }
+  }
 
   const template = useMemo(
     () => templates.find((t) => t.id === templateId),
@@ -345,9 +379,37 @@ export default function NewSitePage() {
                   </label>
                 ))}
               </fieldset>
-              <button disabled title="Install pipeline arrives with Milestone M3">
-                Install Site (M3)
+              <button
+                disabled={installing || !checklist.every(Boolean)}
+                title={!checklist.every(Boolean) ? 'Confirm every policy item first' : undefined}
+                onClick={() => void runInstall()}
+              >
+                {installing ? 'Installing…' : 'Install Site'}
               </button>
+
+              {installLog && (
+                <div className="stream-panel">
+                  <h2>Live installation</h2>
+                  {installLog.length === 0 && <div className="sub">Starting…</div>}
+                  {installLog.map((e) => (
+                    <div key={e.step} className={`stream-line ${e.status === 'skipped' ? 'ok' : e.status}`}>
+                      {e.status === 'ok' || e.status === 'done' ? '✓'
+                        : e.status === 'skipped' ? '↷'
+                        : e.status === 'fail' ? '✗' : '→'}{' '}
+                      {e.title}
+                      {e.status === 'skipped' && ' (skipped)'}
+                      {e.detail && <div className="sub">{e.detail}</div>}
+                      {e.status === 'fail' && e.step !== 'preflight' && (
+                        <div style={{ marginTop: 6 }}>
+                          <button disabled={installing} onClick={() => void runInstall(e.step)}>
+                            Retry from this step
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           ) : (
             <>

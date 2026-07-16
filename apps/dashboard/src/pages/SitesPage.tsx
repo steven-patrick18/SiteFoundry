@@ -2,6 +2,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../lib/api';
 
+interface BuildRow {
+  id: string;
+  status: string;
+  durationMs: number | null;
+  lighthouseScore: number | null;
+  createdAt: string;
+  artifactPath: string | null;
+}
+
 interface SiteRow {
   id: string;
   name: string;
@@ -26,6 +35,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function SitesPage() {
   const [sites, setSites] = useState<SiteRow[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [buildsFor, setBuildsFor] = useState<SiteRow | null>(null);
   const navigate = useNavigate();
 
   const reload = useCallback(async () => {
@@ -80,13 +90,109 @@ export default function SitesPage() {
                 <td className="sub">{s.installStatus}</td>
                 <td className="sub">{s.sslStatus}</td>
                 <td className="actions">
-                  <button onClick={() => navigate(`/sites/new?site=${s.id}`)}>Edit draft</button>
+                  <button onClick={() => navigate(`/sites/new?site=${s.id}`)}>
+                    {s.status === 'draft' ? 'Edit draft' : 'Open'}
+                  </button>
+                  <button onClick={() => setBuildsFor(s)}>Builds</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
+
+      {buildsFor && (
+        <BuildsModal
+          site={buildsFor}
+          onClose={() => setBuildsFor(null)}
+          onChanged={() => void reload()}
+        />
+      )}
     </>
+  );
+}
+
+function BuildsModal({
+  site, onClose, onChanged,
+}: {
+  site: SiteRow;
+  onClose: () => void;
+  onChanged: () => void;
+}) {
+  const [builds, setBuilds] = useState<BuildRow[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    api<BuildRow[]>(`/sites/${site.id}/builds`)
+      .then(setBuilds)
+      .catch((err) => setError(err.message));
+  }, [site.id]);
+
+  async function rollback(buildId: string) {
+    if (!window.confirm(`Roll back ${site.domain} to build ${buildId.slice(0, 8)}?`)) return;
+    setBusyId(buildId);
+    setError(null);
+    setMessage(null);
+    const started = Date.now();
+    try {
+      await api(`/sites/${site.id}/rollback`, {
+        method: 'POST',
+        body: JSON.stringify({ build_id: buildId }),
+      });
+      setMessage(`Rolled back in ${((Date.now() - started) / 1000).toFixed(1)}s`);
+      onChanged();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <h2>Builds — {site.domain}</h2>
+        <p className="sub">Each build is an immutable artifact. Rollback swaps the live files in seconds.</p>
+        {error && <div className="error">{error}</div>}
+        {message && <div className="stream-line ok">✓ {message}</div>}
+        {!builds ? (
+          <p className="placeholder">Loading…</p>
+        ) : builds.length === 0 ? (
+          <p className="placeholder">No builds yet — builds appear after the first install.</p>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr><th>Build</th><th>Status</th><th>Duration</th><th>Created</th><th /></tr>
+            </thead>
+            <tbody>
+              {builds.map((b) => (
+                <tr key={b.id}>
+                  <td className="mono">{b.id.slice(0, 8)}</td>
+                  <td>
+                    <span className="badge" style={{ background: b.status === 'success' ? '#22c55e' : b.status === 'failed' ? '#ef4444' : '#eab308' }}>
+                      {b.status}
+                    </span>
+                  </td>
+                  <td className="sub">{b.durationMs ? `${(b.durationMs / 1000).toFixed(1)}s` : '—'}</td>
+                  <td className="sub">{new Date(b.createdAt).toLocaleString()}</td>
+                  <td>
+                    {b.status === 'success' && b.artifactPath && (
+                      <button disabled={busyId !== null} onClick={() => void rollback(b.id)}>
+                        {busyId === b.id ? 'Rolling back…' : 'Rollback'}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <div className="modal-actions">
+          <button onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
   );
 }

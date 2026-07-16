@@ -1,0 +1,32 @@
+---
+import { params } from '../lib/config.js';
+const products = Array.isArray(params.products) ? params.products : [];
+const cta = params.hero?.cta_text ?? 'Buy Now';
+---
+{products.length > 0 && (
+  <section class="wrap" id="products">
+    <h2 class="section">Top picks</h2>
+    <div class="grid">
+      {products.map((p) => (
+        <div class="product">
+          {p.image_url && <img src={p.image_url} alt={p.title} loading="lazy" />}
+          <div class="pbody">
+            <h3>{p.title}</h3>
+            {p.price && (
+              <div class="price">
+                {p.price}
+                {p.compare_price && <s>{p.compare_price}</s>}
+              </div>
+            )}
+            {Array.isArray(p.bullets) && p.bullets.length > 0 && (
+              <ul>
+                {p.bullets.map((b) => <li>{b}</li>)}
+              </ul>
+            )}
+            <a class="cta" href={p.target_url} data-outbound data-product={p.title} rel="nofollow sponsored">{cta}</a>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+)}

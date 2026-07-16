@@ -1,0 +1,26 @@
+---
+// Business identity + contact visible on every page (§8 compliance gate).
+import { params } from '../lib/config.js';
+const trust = params.trust ?? {};
+const hasDisclosure = !!(params.legal?.affiliate_disclosure_md ?? '').trim();
+const year = new Date().getFullYear();
+---
+<footer class="trust">
+  <div class="wrap">
+    <div class="cols">
+      <div>
+        <strong>{trust.business_name}</strong><br />
+        {trust.address}<br />
+        <a href={`mailto:${trust.contact_email}`}>{trust.contact_email}</a> ·
+        <a href={`tel:${trust.contact_phone}`}>{trust.contact_phone}</a>
+      </div>
+      <nav>
+        <a href="/privacy/">Privacy Policy</a>
+        <a href="/terms/">Terms &amp; Conditions</a>
+        {hasDisclosure && <a href="/disclosure/">Disclosure</a>}
+        <a href="/contact/">Contact</a>
+      </nav>
+    </div>
+    <p style="margin-top:16px">© {year} {trust.business_name}. All rights reserved.</p>
+  </div>
+</footer>

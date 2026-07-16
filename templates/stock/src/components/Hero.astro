@@ -1,0 +1,18 @@
+---
+import { params, site } from '../lib/config.js';
+const brand = params.brand ?? {};
+const hero = params.hero ?? {};
+---
+<header class="hero">
+  <div class="wrap">
+    {brand.logo_url && <img class="logo" src={brand.logo_url} alt={brand.business_name} />}
+    <h1>{hero.headline}</h1>
+    {hero.subheadline && <p class="sub">{hero.subheadline}</p>}
+    <a class="cta" href={site.destination_url} data-outbound rel="nofollow sponsored">{hero.cta_text ?? 'Shop Now'}</a>
+  </div>
+</header>
+{hero.hero_image_url && (
+  <div class="wrap" style="margin-top:-28px">
+    <img src={hero.hero_image_url} alt="" style="width:100%;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.15)" loading="eager" />
+  </div>
+)}

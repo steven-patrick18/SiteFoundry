@@ -1,0 +1,52 @@
+---
+import Base from '../layouts/Base.astro';
+import Hero from '../components/Hero.astro';
+import ClaimsBar from '../components/ClaimsBar.astro';
+import ProductsGrid from '../components/ProductsGrid.astro';
+import ComparisonTable from '../components/ComparisonTable.astro';
+import LeadForm from '../components/LeadForm.astro';
+import TrustFooter from '../components/TrustFooter.astro';
+import { params, site } from '../lib/config.js';
+import { marked } from 'marked';
+
+const category = site.category ?? 'ecom_showcase';
+const disclosure = (params.legal?.affiliate_disclosure_md ?? '').trim();
+// Prelander/comparison show the disclosure prominently near the top (§8).
+const showTopDisclosure = disclosure && ['prelander', 'comparison'].includes(category);
+---
+<Base>
+  <Hero />
+  <ClaimsBar />
+
+  {showTopDisclosure && (
+    <div class="wrap">
+      <div class="disclosure-note" set:html={marked.parse(disclosure)} />
+    </div>
+  )}
+
+  <main>
+    {category === 'comparison' ? (
+      <ComparisonTable />
+    ) : category === 'lead_page' ? (
+      <LeadForm />
+    ) : (
+      <ProductsGrid />
+    )}
+
+    {category === 'prelander' && (
+      <section class="wrap" style="margin-top:34px">
+        <article class="prose">
+          <h2 class="section">{params.hero?.subheadline ?? 'Why readers choose this'}</h2>
+          {Array.isArray(params.products) && params.products.length > 0 && (
+            <p>
+              After comparing the options, <strong>{params.products[0].title}</strong> stands
+              out — <a href={params.products[0].target_url} data-outbound rel="nofollow sponsored">see current price</a>.
+            </p>
+          )}
+        </article>
+      </section>
+    )}
+  </main>
+
+  <TrustFooter />
+</Base>

@@ -23,6 +23,8 @@ export interface ExecResult {
 
 export interface SshSession {
   exec(command: string, timeoutMs?: number): Promise<ExecResult>;
+  /** SFTP: upload a local file to an absolute remote path. */
+  uploadFile(localPath: string, remotePath: string): Promise<void>;
   /** SHA256 hash of the server host key observed during handshake. */
   hostKey: string;
   close(): void;
@@ -76,6 +78,15 @@ export class SshService {
           close: () => conn.end(),
           exec: (command, execTimeoutMs = 120_000) =>
             this.execOn(conn, command, execTimeoutMs),
+          uploadFile: (localPath, remotePath) =>
+            new Promise<void>((res, rej) => {
+              conn.sftp((err, sftp) => {
+                if (err) return rej(err);
+                sftp.fastPut(localPath, remotePath, (putErr) =>
+                  putErr ? rej(putErr) : res(),
+                );
+              });
+            }),
         });
       });
 

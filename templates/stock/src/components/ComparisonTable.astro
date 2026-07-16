@@ -1,0 +1,37 @@
+---
+import { params } from '../lib/config.js';
+const products = Array.isArray(params.products) ? params.products : [];
+const cta = params.hero?.cta_text ?? 'Check Price';
+---
+{products.length > 0 && (
+  <section class="wrap" id="comparison">
+    <h2 class="section">Compared side by side</h2>
+    <table class="compare">
+      <thead>
+        <tr><th>Option</th><th>Price</th><th>Highlights</th><th></th></tr>
+      </thead>
+      <tbody>
+        {products.map((p, i) => (
+          <tr class={i === 0 ? 'pick' : ''}>
+            <td>
+              <strong>{p.title}</strong>
+              {i === 0 && <span class="pick-badge">Our pick</span>}
+            </td>
+            <td>
+              {p.price}
+              {p.compare_price && <s style="margin-left:6px;color:#9ca3af">{p.compare_price}</s>}
+            </td>
+            <td>
+              {Array.isArray(p.bullets) && (
+                <ul style="padding-left:16px">
+                  {p.bullets.map((b) => <li>{b}</li>)}
+                </ul>
+              )}
+            </td>
+            <td><a class="cta" style="padding:9px 18px;font-size:14px" href={p.target_url} data-outbound data-product={p.title} rel="nofollow sponsored">{cta}</a></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </section>
+)}

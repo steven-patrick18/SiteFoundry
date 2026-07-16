@@ -1,0 +1,18 @@
+---
+import Base from '../layouts/Base.astro';
+import TrustFooter from '../components/TrustFooter.astro';
+import { params } from '../lib/config.js';
+const trust = params.trust ?? {};
+---
+<Base title={`Contact — ${trust.business_name ?? ''}`}>
+  <main class="wrap">
+    <article class="prose">
+      <h1>Contact us</h1>
+      <p><strong>{trust.business_name}</strong></p>
+      <p>{trust.address}</p>
+      <p>Email: <a href={`mailto:${trust.contact_email}`}>{trust.contact_email}</a></p>
+      <p>Phone: <a href={`tel:${trust.contact_phone}`}>{trust.contact_phone}</a></p>
+    </article>
+  </main>
+  <TrustFooter />
+</Base>
