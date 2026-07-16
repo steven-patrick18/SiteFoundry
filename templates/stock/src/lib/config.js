@@ -26,6 +26,9 @@ export const site = readJson('SF_SITE_PATH', {
   tracking: {},
 });
 
+/** Panel endpoint for live visitor product search (empty = disabled). */
+export const searchUrl = site.search_url ?? '';
+
 /** Outbound href to the destination store (UTM passthrough handled by sf.js). */
 export function outbound(url) {
   return url || site.destination_url;

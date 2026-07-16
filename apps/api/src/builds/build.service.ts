@@ -97,6 +97,7 @@ export class BuildService {
           destination_url: input.destinationUrl,
           site_key: input.siteId,
           track_url: `${this.panelPublicUrl}/api/v1/public/track`,
+          search_url: `${this.panelPublicUrl}/api/v1/public/search`,
           tracking: input.tracking,
         },
         null,

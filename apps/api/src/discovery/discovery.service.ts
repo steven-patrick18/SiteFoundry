@@ -116,6 +116,43 @@ export class DiscoveryService {
     return this.monthlyUsage();
   }
 
+  /**
+   * Visitor-facing search (called from deployed sites). Cache-first, and
+   * capped: once the month's SerpApi budget is spent, cache misses return
+   * empty (capped: true) instead of spending more credits — protects the
+   * API budget from ad-traffic abuse.
+   */
+  async publicSearch(
+    query: string,
+    gl = 'us',
+  ): Promise<{ results: DiscoveredProduct[]; cached: boolean; capped: boolean }> {
+    const q = query.trim().toLowerCase();
+    if (q.length < 2) return { results: [], cached: false, capped: false };
+    const apiKey = await this.resolveKey();
+    if (!apiKey) return { results: [], cached: false, capped: false };
+
+    const freshSince = new Date(Date.now() - CACHE_TTL_DAYS * 24 * 3600 * 1000);
+    const cached = await this.prisma.admin.searchCache.findFirst({
+      where: { engine: 'google_shopping', query: q, gl, fetchedAt: { gte: freshSince } },
+      orderBy: { fetchedAt: 'desc' },
+    });
+    if (cached) {
+      return { results: cached.results as unknown as DiscoveredProduct[], cached: true, capped: false };
+    }
+
+    // cache miss — only spend a credit if under the monthly cap
+    const cap = this.config.get<number>('SERPAPI_MONTHLY_CAP', 200);
+    if ((await this.monthlyUsage()) >= cap) {
+      return { results: [], cached: false, capped: true };
+    }
+    try {
+      const fresh = await this.search(q, gl);
+      return { results: fresh.results, cached: false, capped: false };
+    } catch {
+      return { results: [], cached: false, capped: false };
+    }
+  }
+
   private async monthlyUsage(): Promise<number> {
     const monthStart = new Date();
     monthStart.setUTCDate(1);

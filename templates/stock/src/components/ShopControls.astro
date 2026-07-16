@@ -23,6 +23,7 @@ const hasFreeShip = products.some(
     /free/i.test(p.shipping_cost ?? '') ||
     (Array.isArray(p.offers) && p.offers.some((o) => /free/i.test(o.shipping_cost ?? ''))),
 );
+const searchUrl = site.search_url ?? '';
 ---
 <header class="shop-top">
   <div class="wrap shop-top-row">
@@ -33,7 +34,8 @@ const hasFreeShip = products.some(
     <input
       id="sf-search-input"
       type="search"
-      placeholder={`Search ${products.length} products`}
+      data-search-url={searchUrl}
+      placeholder={searchUrl ? 'Search any product — live prices across stores…' : `Search ${products.length} products`}
       autocomplete="off"
       aria-label="Search products"
     />
@@ -72,6 +74,90 @@ const hasFreeShip = products.some(
     var activeChip = 'all';
     var searchTimer = null;
 
+    // ── live search mode (fetch products from the panel API) ──────────────
+    var SEARCH_URL = input.getAttribute('data-search-url') || '';
+    var originalGrid = grid.innerHTML; // baked-in catalog, restored when cleared
+    var liveMode = false;
+    var reqSeq = 0;
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+      });
+    }
+    function stars(r) {
+      var n = Math.round(r || 0);
+      return '★'.repeat(n) + '☆'.repeat(5 - n);
+    }
+    function compact(n) {
+      if (!n) return '';
+      return n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'K' : String(n);
+    }
+    function priceNum(p) {
+      var m = String(p == null ? '' : p).replace(/,/g, '').match(/[\d.]+/);
+      return m ? m[0] : '';
+    }
+    function cardHtml(p) {
+      var img = p.image_url
+        ? '<img src="' + esc(p.image_url) + '" alt="" loading="lazy">'
+        : '';
+      var rating = typeof p.rating === 'number'
+        ? '<div class="grating"><span class="gstars">' + stars(p.rating) + '</span><span>' +
+          p.rating.toFixed(1) + '</span>' +
+          (p.review_count ? '<span class="gcount">(' + compact(p.review_count) + ')</span>' : '') +
+          '</div>'
+        : '';
+      var deliv = (p.shipping_cost || p.delivery_time)
+        ? '<div class="gdelivery">' + esc([p.shipping_cost, p.delivery_time].filter(Boolean).join(' · ')) + '</div>'
+        : '';
+      var badge = p.badge ? '<span class="badge-chip">' + esc(p.badge) + '</span>' : '';
+      var cmp = p.compare_price ? '<s>' + esc(p.compare_price) + '</s>' : '';
+      return '<div class="gcard" data-price="' + esc(priceNum(p.price)) + '" data-rating="' +
+        (p.rating || '') + '" data-sale="' + (p.compare_price ? '1' : '0') + '" data-freeship="' +
+        (/free/i.test(p.shipping_cost || '') ? '1' : '0') + '" data-stores="' + esc((p.store_name || '').toLowerCase()) + '">' +
+        '<a class="gimg" href="' + esc(p.link) + '" data-outbound data-product="' + esc(p.title) + '" rel="nofollow sponsored">' + badge + img + '</a>' +
+        '<div class="gbody">' +
+        '<a class="gtitle" href="' + esc(p.link) + '" data-outbound data-product="' + esc(p.title) + '" rel="nofollow sponsored">' + esc(p.title) + '</a>' +
+        '<div class="gprice"><span class="amount">' + esc(p.price || '') + '</span>' + cmp + '</div>' +
+        rating +
+        (p.store_name ? '<div class="gstore">' + esc(p.store_name) + '</div>' : '') +
+        deliv +
+        '<a class="gvisit" href="' + esc(p.link) + '" data-outbound data-product="' + esc(p.title) + '" rel="nofollow sponsored">Visit store ›</a>' +
+        '</div></div>';
+    }
+
+    function runLiveSearch(q) {
+      var seq = ++reqSeq;
+      grid.innerHTML = '<p class="sub" style="grid-column:1/-1;padding:20px">Searching stores…</p>';
+      liveMode = true;
+      fetch(SEARCH_URL + '?q=' + encodeURIComponent(q) + '&gl=us')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (seq !== reqSeq) return; // a newer search superseded this one
+          var list = (data && data.results) || [];
+          if (!list.length) {
+            grid.innerHTML = '<p class="sub" style="grid-column:1/-1;padding:20px">' +
+              (data && data.capped ? 'Search limit reached for now — try again later.' : 'No live results for “' + esc(q) + '”. Try another product.') +
+              '</p>';
+          } else {
+            grid.innerHTML = list.map(cardHtml).join('');
+          }
+          cards = [].slice.call(grid.querySelectorAll('.gcard'));
+          applySort();
+        })
+        .catch(function () {
+          if (seq !== reqSeq) return;
+          grid.innerHTML = '<p class="sub" style="grid-column:1/-1;padding:20px">Search is unavailable right now.</p>';
+        });
+    }
+
+    function restoreCatalog() {
+      liveMode = false;
+      grid.innerHTML = originalGrid;
+      cards = [].slice.call(grid.querySelectorAll('.gcard'));
+      if (empty) empty.hidden = true;
+    }
+
     function matchChip(card) {
       if (activeChip === 'all') return true;
       if (activeChip === 'sale') return card.getAttribute('data-sale') === '1';
@@ -93,16 +179,7 @@ const hasFreeShip = products.some(
       return true;
     }
 
-    function apply() {
-      var terms = input.value.toLowerCase().split(/\s+/).filter(Boolean);
-      var visible = 0;
-      cards.forEach(function (card) {
-        var show = matchChip(card) && matchSearch(card, terms);
-        card.style.display = show ? '' : 'none';
-        if (show) visible++;
-      });
-      if (empty) empty.hidden = visible !== 0;
-
+    function applySort() {
       var mode = sort ? sort.value : 'relevance';
       var ordered = cards.slice();
       if (mode !== 'relevance') {
@@ -119,14 +196,37 @@ const hasFreeShip = products.some(
       ordered.forEach(function (card, i) { card.style.order = String(i); });
     }
 
+    function apply() {
+      // In live mode the API already matched the query; only chips filter.
+      var terms = liveMode ? [] : input.value.toLowerCase().split(/\s+/).filter(Boolean);
+      var visible = 0;
+      cards.forEach(function (card) {
+        var show = matchChip(card) && matchSearch(card, terms);
+        card.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      if (empty) empty.hidden = visible !== 0 || liveMode;
+      applySort();
+    }
+
     input.addEventListener('input', function () {
-      apply();
-      clearTimeout(searchTimer);
       var q = input.value.trim();
-      if (q.length >= 2 && window.sfTrack) {
+      clearTimeout(searchTimer);
+      if (SEARCH_URL) {
+        // live mode: debounce, then fetch real products from the panel API
+        if (q.length < 2) { restoreCatalog(); return; }
         searchTimer = setTimeout(function () {
-          window.sfTrack('search', { q: q.slice(0, 120) });
-        }, 700);
+          runLiveSearch(q);
+          if (window.sfTrack) window.sfTrack('search', { q: q.slice(0, 120) });
+        }, 500);
+      } else {
+        // no search endpoint: filter the baked-in catalog locally
+        apply();
+        if (q.length >= 2 && window.sfTrack) {
+          searchTimer = setTimeout(function () {
+            window.sfTrack('search', { q: q.slice(0, 120) });
+          }, 700);
+        }
       }
     });
     if (sort) sort.addEventListener('change', apply);

@@ -33,6 +33,10 @@ const envSchema = z.object({
   // SerpApi key for the product discovery finder (optional — feature is
   // disabled without it). Server-side only; never reaches the browser.
   SERPAPI_KEY: z.string().default(''),
+  // Hard monthly cap on SerpApi credits spent by the public visitor search,
+  // so ad traffic can't run up a bill. Over the cap, cached results still
+  // serve; fresh queries return empty until the month rolls over.
+  SERPAPI_MONTHLY_CAP: z.coerce.number().default(200),
   // Salt for lead IP hashing (§13: raw IPs are never stored)
   LEAD_IP_SALT: z.string().default('dev-lead-salt'),
   // Panel self-update from git (admin-only). Off by default; the production

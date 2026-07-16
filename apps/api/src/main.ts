@@ -9,6 +9,10 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // Deployed client sites (on arbitrary domains) call the public track/lead/
+  // search endpoints cross-origin. Auth is Bearer-token based (no cookies),
+  // so reflecting the request origin is safe.
+  app.enableCors({ origin: true });
   app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, transform: true }),
