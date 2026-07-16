@@ -68,7 +68,7 @@ export default function ClientsPage() {
                 <td>
                   <strong>{c.name}</strong>
                   {c.company && <div className="sub">{c.company}</div>}
-                  {c.gstin && <div className="sub mono">GSTIN {c.gstin}</div>}
+                  {c.gstin && <div className="sub mono">EIN {c.gstin}</div>}
                 </td>
                 <td>
                   {c.contactName && <div>{c.contactName}</div>}
@@ -122,7 +122,7 @@ export function ClientModal({
     gstin: client?.gstin ?? '',
     address: client?.address ?? '',
     city: client?.city ?? '',
-    country: client?.country ?? 'IN',
+    country: client?.country ?? 'US',
     websiteUrl: client?.websiteUrl ?? '',
     notes: client?.notes ?? '',
   });
@@ -157,10 +157,10 @@ export function ClientModal({
           <label>Company (legal)<input value={form.company} onChange={set('company')} /></label>
           <label>Contact person<input value={form.contactName} onChange={set('contactName')} /></label>
           <label>Email<input type="email" value={form.email} onChange={set('email')} /></label>
-          <label>Phone<input value={form.phone} onChange={set('phone')} /></label>
-          <label>GSTIN<input value={form.gstin} onChange={set('gstin')} /></label>
+          <label>Phone<input value={form.phone} onChange={set('phone')} placeholder="+1 (555) 555-0134" /></label>
+          <label>Tax ID (EIN)<input value={form.gstin} onChange={set('gstin')} placeholder="12-3456789" /></label>
           <label>City<input value={form.city} onChange={set('city')} /></label>
-          <label>Country (ISO-2)<input value={form.country} maxLength={2} onChange={set('country')} /></label>
+          <label>Country (ISO-2)<input value={form.country} maxLength={2} onChange={set('country')} placeholder="US" /></label>
         </div>
         <label>Address<textarea rows={2} value={form.address} onChange={set('address')} /></label>
         <label>Existing website<input value={form.websiteUrl} onChange={set('websiteUrl')} placeholder="https://" /></label>

@@ -1,20 +1,39 @@
 ---
-// Consented lead capture (M5 wires submission to /public/lead via sf.js).
+// Consented lead capture (US market): name/email/phone/ZIP with TCPA-style
+// consent text. sf.js posts to /public/lead with the session's UTMs.
 import { params } from '../lib/config.js';
 const form = params.lead_form ?? {};
 ---
 <section class="wrap" id="lead">
   <h2 class="section">{form.heading ?? 'Get a free quote'}</h2>
   <form class="lead" method="post" action="#" data-sf-lead>
-    <input type="text" name="name" placeholder="Your name" required />
-    <input type="email" name="email" placeholder="Email address" required />
+    <input type="text" name="name" placeholder="Full name" autocomplete="name" required />
+    <input type="email" name="email" placeholder="Email address" autocomplete="email" required />
     {form.collect_phone !== false && (
-      <input type="tel" name="phone" placeholder="Phone number" required />
+      <input
+        type="tel"
+        name="phone"
+        placeholder="Phone number, e.g. (555) 555-0134"
+        autocomplete="tel"
+        required
+      />
+    )}
+    {form.collect_zip && (
+      <input
+        type="text"
+        name="zip"
+        placeholder="ZIP code"
+        inputmode="numeric"
+        pattern="[0-9]{5}(-[0-9]{4})?"
+        maxlength="10"
+        autocomplete="postal-code"
+        required
+      />
     )}
     <label class="consent">
       <input type="checkbox" name="consent" required />
       <span>{form.consent_text ?? 'I agree to be contacted about this enquiry.'}</span>
     </label>
-    <button type="submit">{form.submit_text ?? 'Request Callback'}</button>
+    <button type="submit">{form.submit_text ?? 'Get My Free Quote'}</button>
   </form>
 </section>

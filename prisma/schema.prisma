@@ -124,7 +124,7 @@ model Client {
   address     String?
   city        String?
   state       String?
-  country     String   @default("IN")
+  country     String   @default("US")
   websiteUrl  String?  @map("website_url")
   notes       String?
   status      String   @default("active")

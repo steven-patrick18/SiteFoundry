@@ -20,6 +20,7 @@ const cta = params.hero?.cta_text ?? 'Check Price';
             <tr class={i === 0 ? 'pick' : ''}>
               <td>
                 <div class="compare-option">
+                  <span class="rank">#{i + 1}</span>
                   {p.image_url && <img class="thumb" src={p.image_url} alt="" loading="lazy" />}
                   <div>
                     <strong>{p.title}</strong>

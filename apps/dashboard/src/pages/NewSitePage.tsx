@@ -35,6 +35,28 @@ interface InstallEvent {
 
 const STEPS = ['Template', 'Client & Domain', 'Server', 'Parameters', 'Tracking', 'Pre-flight'];
 
+/**
+ * Non-destructively fill schema `default`s into params (US stock legal
+ * text, TCPA consent, per-template hero copy). Only sets fields the
+ * operator hasn't touched.
+ */
+function fillDefaults(schema: any, value: Record<string, any>): Record<string, any> {
+  const next = { ...value };
+  for (const [blockKey, block] of Object.entries<any>(schema?.properties ?? {})) {
+    if (block?.type !== 'object' || !block.properties) continue;
+    const current = { ...(next[blockKey] ?? {}) };
+    let changed = next[blockKey] === undefined;
+    for (const [fieldKey, field] of Object.entries<any>(block.properties)) {
+      if (current[fieldKey] === undefined && field?.default !== undefined) {
+        current[fieldKey] = field.default;
+        changed = true;
+      }
+    }
+    if (changed) next[blockKey] = current;
+  }
+  return next;
+}
+
 const POLICY_CHECKLIST = [
   'Ad claims match what I will write in my ads',
   'Business identity and contact are visible on page',
@@ -147,9 +169,12 @@ export default function NewSitePage() {
   useEffect(() => {
     if (!templateId) return;
     api<TemplateFull>(`/templates/${templateId}`)
-      .then((full) =>
-        setTemplates((list) => list.map((t) => (t.id === full.id ? { ...t, ...full } : t))),
-      )
+      .then((full) => {
+        setTemplates((list) => list.map((t) => (t.id === full.id ? { ...t, ...full } : t)));
+        // fill US stock defaults (legal text, TCPA consent, hero copy) for
+        // any field the operator hasn't already set
+        if (full.paramSchema) setParams((prev) => fillDefaults(full.paramSchema, prev));
+      })
       .catch((err) => setError(err.message));
   }, [templateId]);
 

@@ -142,6 +142,8 @@ const fontStack = `${brand.font ?? 'Inter'}, system-ui, -apple-system, 'Segoe UI
       .offer-price { font-weight: 700; font-size: 14.5px; white-space: nowrap; }
       .offer-cta { padding: 7px 14px !important; font-size: 12.5px !important; }
       .compare-option { display: flex; gap: 12px; align-items: flex-start; min-width: 220px; }
+      .rank { flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; background: #f1f5f9; color: #334155; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+      tr.pick .rank { background: var(--secondary); color: #06230f; }
       .compare-option .thumb { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; flex-shrink: 0; background: #f3f4f6; }
       .delivery-cell { font-size: 13px; color: #15803d; white-space: nowrap; }
       .delivery-cell .ship { font-weight: 700; }

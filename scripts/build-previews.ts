@@ -161,10 +161,12 @@ function demoParams(category: string) {
     ...(category === 'lead_page'
       ? {
           lead_form: {
-            heading: 'Book your free quote',
-            submit_text: 'Request Callback',
+            heading: 'Book your free estimate',
+            submit_text: 'Request My Quotes',
             collect_phone: true,
-            consent_text: 'I agree to be contacted about my enquiry. See our privacy policy.',
+            collect_zip: true,
+            consent_text:
+              'By checking this box, I agree to be contacted at the phone number and email provided, including by automated technology and SMS. Consent is not a condition of purchase. Message & data rates may apply.',
           },
         }
       : {}),
