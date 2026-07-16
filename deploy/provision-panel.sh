@@ -60,12 +60,20 @@ if [ -f "$APP_DIR/.env" ]; then
   APP_DB_PASS="${ENV_APP_DB_PASS:-$APP_DB_PASS}"
 fi
 
+# Owner role gets CREATEROLE so the RLS migration can create the restricted
+# app role; the app role is also pre-created here with the .env password so
+# the migration's own CREATE ROLE is a no-op (and passwords stay in sync).
 sudo -u postgres psql -v ON_ERROR_STOP=1 <<SQL
 DO \$\$ BEGIN
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='sitefoundry') THEN
-    CREATE ROLE sitefoundry LOGIN PASSWORD '${DB_PASS}';
+    CREATE ROLE sitefoundry LOGIN CREATEROLE PASSWORD '${DB_PASS}';
   ELSE
-    ALTER ROLE sitefoundry WITH LOGIN PASSWORD '${DB_PASS}';
+    ALTER ROLE sitefoundry WITH LOGIN CREATEROLE PASSWORD '${DB_PASS}';
+  END IF;
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='sitefoundry_app') THEN
+    CREATE ROLE sitefoundry_app LOGIN PASSWORD '${APP_DB_PASS}';
+  ELSE
+    ALTER ROLE sitefoundry_app WITH LOGIN PASSWORD '${APP_DB_PASS}';
   END IF;
 END \$\$;
 SELECT 'CREATE DATABASE sitefoundry OWNER sitefoundry'
