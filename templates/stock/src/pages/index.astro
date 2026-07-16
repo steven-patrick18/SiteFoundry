@@ -50,6 +50,9 @@ const hero = params.hero ?? {};
   )}
 
   <main class={shopMode ? 'shop-main' : ''}>
+    {shopMode && (
+      <div id="sf-categories" class="sf-cats wrap" hidden></div>
+    )}
     {shopMode ? (
       <ShopGrid />
     ) : category === 'comparison' ? (

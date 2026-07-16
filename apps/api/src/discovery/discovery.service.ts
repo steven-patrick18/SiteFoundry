@@ -138,6 +138,37 @@ export class DiscoveryService {
     return out;
   }
 
+  /**
+   * Auto categories for the home page: each recent distinct search query
+   * becomes a category with its products. Grows as visitors search more
+   * things. Zero API cost (reads the cache).
+   */
+  async categories(
+    limitCats = 8,
+    perCat = 12,
+  ): Promise<Array<{ query: string; title: string; products: DiscoveredProduct[] }>> {
+    const freshSince = new Date(Date.now() - CACHE_TTL_DAYS * 24 * 3600 * 1000);
+    const rows = await this.prisma.admin.searchCache.findMany({
+      where: { engine: 'google_shopping', fetchedAt: { gte: freshSince } },
+      orderBy: { fetchedAt: 'desc' },
+      take: 60,
+    });
+    const seen = new Set<string>();
+    const cats: Array<{ query: string; title: string; products: DiscoveredProduct[] }> = [];
+    for (const row of rows) {
+      if (seen.has(row.query)) continue;
+      seen.add(row.query);
+      const products = ((row.results as unknown as DiscoveredProduct[]) ?? [])
+        .filter((p) => p && p.title && p.link)
+        .slice(0, perCat);
+      if (!products.length) continue;
+      const title = row.query.replace(/\b\w/g, (c) => c.toUpperCase());
+      cats.push({ query: row.query, title, products });
+      if (cats.length >= limitCats) break;
+    }
+    return cats;
+  }
+
   /** Distinct API fetches this calendar month = credits spent via the panel. */
   usageThisMonth(): Promise<number> {
     return this.monthlyUsage();

@@ -114,6 +114,19 @@ const fontStack = `${brand.font ?? 'Inter'}, system-ui, -apple-system, 'Segoe UI
       .shop-main { padding: 18px 0 46px; }
       .shop-main .claims { background: none; }
 
+      /* ── category home (auto-created rows + horizontal sliders) ── */
+      .sf-cats { padding: 8px 0 0; }
+      .sf-cat { margin: 6px 0 26px; }
+      .sf-cat-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 12px; }
+      .sf-cat-title { font-size: 20px; font-weight: 700; color: #202124; text-transform: capitalize; margin: 0; }
+      .sf-cat-all { background: none; border: 0; color: #1a73e8; font-size: 13.5px; font-weight: 600; cursor: pointer; white-space: nowrap; padding: 4px 0; }
+      .sf-cat-all:hover { text-decoration: underline; }
+      .sf-slider { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 2px 2px 12px; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+      .sf-slider::-webkit-scrollbar { height: 8px; }
+      .sf-slider::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 999px; }
+      .sf-slider .gcard { flex: 0 0 auto; width: 190px; scroll-snap-align: start; border-color: #ebebeb; }
+      @media (max-width: 640px) { .sf-slider .gcard { width: 150px; } .sf-cat-title { font-size: 17px; } .sf-slider .gimg { height: 130px; } }
+
       /* ── shopping cards ── */
       .ggrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
       .gcard { background: #fff; border: 1px solid transparent; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; transition: box-shadow .15s, border-color .15s; }

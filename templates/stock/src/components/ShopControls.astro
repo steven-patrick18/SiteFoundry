@@ -90,10 +90,13 @@ const searchUrl = site.search_url ?? '';
     var chipsBox = document.getElementById('sf-chips');
     var empty = document.getElementById('sf-search-empty');
     var grid = document.querySelector('#products .ggrid');
+    var productsSection = document.getElementById('products');
+    var catsBox = document.getElementById('sf-categories');
     if (!input || !grid) return;
     var cards = [].slice.call(grid.querySelectorAll('.gcard'));
     var activeChip = 'all';
     var searchTimer = null;
+    var hasCategories = false; // set once the category home renders
 
     // ── live search mode (fetch products from the panel API) ──────────────
     var SEARCH_URL = input.getAttribute('data-search-url') || '';
@@ -149,6 +152,7 @@ const searchUrl = site.search_url ?? '';
 
     function runLiveSearch(q) {
       var seq = ++reqSeq;
+      showResultsView();
       grid.innerHTML = '<p class="sub" style="grid-column:1/-1;padding:20px">Searching stores…</p>';
       liveMode = true;
       fetch(SEARCH_URL + '?q=' + encodeURIComponent(q) + '&gl=us')
@@ -179,6 +183,7 @@ const searchUrl = site.search_url ?? '';
       cards = [].slice.call(grid.querySelectorAll('.gcard'));
       if (empty) empty.hidden = true;
       rebuildStoreChips();
+      showHomeView(); // back to the category home (or flat grid fallback)
     }
 
     // Store filter chips reflect the actual retailers in the current results
@@ -207,8 +212,57 @@ const searchUrl = site.search_url ?? '';
       });
     }
 
-    // Home page: render products from the panel's cached searches (grows as
-    // visitors search). Falls back to the baked-in catalog when empty.
+    // ── home views: category rows (sliders) vs. search-results grid ───────
+    // The home shows one horizontal slider per auto-created category (each
+    // distinct thing visitors have searched). As more categories accumulate,
+    // more rows appear. Searching switches to the flat results grid.
+    function showResultsView() {
+      if (catsBox) catsBox.hidden = true;
+      if (productsSection) productsSection.style.display = '';
+      if (chipsBox) chipsBox.hidden = false;
+    }
+    function showHomeView() {
+      if (hasCategories && catsBox) {
+        catsBox.hidden = false;
+        if (productsSection) productsSection.style.display = 'none';
+        if (chipsBox) chipsBox.hidden = true; // chips filter the results grid, not the home rows
+      } else {
+        if (catsBox) catsBox.hidden = true;
+        if (productsSection) productsSection.style.display = '';
+        if (chipsBox) chipsBox.hidden = false;
+      }
+    }
+
+    function categoryRowHtml(cat) {
+      var cardsHtml = (cat.products || []).map(cardHtml).join('');
+      return '<section class="sf-cat">' +
+        '<div class="sf-cat-head">' +
+        '<h2 class="sf-cat-title">' + esc(cat.title) + '</h2>' +
+        '<button type="button" class="sf-cat-all" data-q="' + esc(cat.query) + '">See all ' + esc(cat.title) + ' ›</button>' +
+        '</div>' +
+        '<div class="sf-slider">' + cardsHtml + '</div>' +
+        '</section>';
+    }
+
+    // Home page: fetch auto-created categories from the panel (each cached
+    // search = a category). Falls back to a flat featured grid, then to the
+    // baked-in catalog. Zero API cost — reads what visitors already searched.
+    function loadCategories() {
+      if (!SEARCH_URL || !catsBox) return loadFeatured();
+      var url = SEARCH_URL.replace(/\/search$/, '/categories') + '?limit=8&per=12';
+      fetch(url)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var cats = (data && data.categories) || [];
+          if (cats.length < 1) return loadFeatured();
+          catsBox.innerHTML = cats.map(categoryRowHtml).join('');
+          hasCategories = true;
+          showHomeView();
+        })
+        .catch(function () { loadFeatured(); });
+    }
+
+    // Fallback home: a single flat grid from recent cached searches.
     function loadFeatured() {
       if (!SEARCH_URL) return;
       var url = SEARCH_URL.replace(/\/search$/, '/featured') + '?limit=16';
@@ -310,9 +364,22 @@ const searchUrl = site.search_url ?? '';
       });
     }
 
+    // "See all <category>" jumps into a full live search for that category.
+    if (catsBox) {
+      catsBox.addEventListener('click', function (e) {
+        var all = e.target.closest('.sf-cat-all');
+        if (!all) return;
+        var q = all.getAttribute('data-q') || '';
+        if (!q) return;
+        input.value = q;
+        runLiveSearch(q);
+        if (window.sfTrack) window.sfTrack('search', { q: q.slice(0, 120), src: 'category' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
+
     // ── on-site product detail (keeps visitors on this site) ──────────────
     var detail = document.getElementById('sf-detail');
-    var productsSection = document.getElementById('products');
 
     function openDetail(p) {
       if (!detail) return;
@@ -335,12 +402,23 @@ const searchUrl = site.search_url ?? '';
       cta.href = link;
       cta.setAttribute('data-product', p.title || '');
 
-      // related = the other cards currently shown
-      var related = cards.filter(function (c) { return c.getAttribute('data-json') && c.querySelector('.gtitle') && c.querySelector('.gtitle').textContent !== p.title; }).slice(0, 5);
+      // related = other product cards anywhere on the page (grid or category rows)
+      var pool = [].slice.call(document.querySelectorAll('.gcard[data-json]'));
+      var relSeen = {};
+      var related = [];
+      for (var i = 0; i < pool.length && related.length < 5; i++) {
+        var t = pool[i].querySelector('.gtitle');
+        var title = t ? t.textContent : '';
+        if (!title || title === p.title || relSeen[title]) continue;
+        relSeen[title] = 1;
+        related.push(pool[i]);
+      }
       var rel = detail.querySelector('#sf-detail-related');
       rel.innerHTML = related.map(function (c) { return c.outerHTML; }).join('');
 
       if (productsSection) productsSection.style.display = 'none';
+      if (catsBox) catsBox.hidden = true;
+      if (chipsBox) chipsBox.hidden = true;
       detail.hidden = false;
       window.scrollTo({ top: 0, behavior: 'smooth' });
       try { history.pushState({ sfDetail: 1 }, ''); } catch (e) {}
@@ -350,7 +428,8 @@ const searchUrl = site.search_url ?? '';
     function closeDetail() {
       if (!detail) return;
       detail.hidden = true;
-      if (productsSection) productsSection.style.display = '';
+      if (liveMode) showResultsView(); // came from search results
+      else showHomeView();             // came from the category home
     }
 
     function cardProduct(card) {
@@ -380,8 +459,8 @@ const searchUrl = site.search_url ?? '';
       if (detail && !detail.hidden) closeDetail();
     });
 
-    // on the home page (no active search), show cached/searched products
-    loadFeatured();
+    // on the home page (no active search), show auto-created category rows
+    loadCategories();
   }
   if (document.readyState !== 'loading') init();
   else document.addEventListener('DOMContentLoaded', init);

@@ -53,4 +53,13 @@ export class PublicSearchController {
     const n = Math.min(24, Math.max(1, parseInt(String(limit), 10) || 12));
     return { results: await this.discovery.featured(n) };
   }
+
+  /** Auto category rows for the home page (each cached query = a category). */
+  @Public()
+  @Get('categories')
+  async categories(@Query('limit') limit = '8', @Query('per') per = '12') {
+    const cats = Math.min(12, Math.max(1, parseInt(String(limit), 10) || 8));
+    const per_ = Math.min(20, Math.max(4, parseInt(String(per), 10) || 12));
+    return { categories: await this.discovery.categories(cats, per_) };
+  }
 }
