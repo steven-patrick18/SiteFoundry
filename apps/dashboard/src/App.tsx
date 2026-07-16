@@ -6,6 +6,7 @@ import ServersPage from './pages/ServersPage';
 import ClientsPage from './pages/ClientsPage';
 import TemplatesPage from './pages/TemplatesPage';
 import SitesPage from './pages/SitesPage';
+import NewSitePage from './pages/NewSitePage';
 import SettingsPage from './pages/SettingsPage';
 
 const NAV = [
@@ -60,6 +61,7 @@ export default function App() {
         <Route path="/clients" element={<ClientsPage />} />
         <Route path="/templates" element={<TemplatesPage />} />
         <Route path="/sites" element={<SitesPage />} />
+        <Route path="/sites/new" element={<NewSitePage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
     </Routes>

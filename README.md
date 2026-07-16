@@ -7,10 +7,12 @@ a full operations record per client, site, server, domain, SSL cert, and ad
 campaign.
 
 Spec: `SiteFoundry Developer Build Doc v3 Final.docx` (v3.0, in repo root).
-Built milestone by milestone (§14 of the doc). **Current state: Milestone M1
-complete** — credential vault (envelope encryption), multi-tenant schema with
-Postgres RLS, JWT auth, server management with SSH connection test + facts
-probe + host-key pinning, and streamed base provisioning.
+Built milestone by milestone (§14 of the doc). **Current state: Milestones
+M1 + M2 complete** — credential vault (envelope encryption), multi-tenant
+schema with Postgres RLS, JWT auth, server management (SSH test, facts probe,
+host-key pinning, streamed base provisioning), client CRUD, template library
+with 5 stock templates, schema-driven parameter forms, draft sites, and the
+pre-flight compliance gate (§8). Next: M3 install pipeline.
 
 ## Stack (fixed by spec §2)
 

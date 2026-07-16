@@ -32,6 +32,9 @@ model Tenant {
   servers      Server[]
   deployEvents DeployEvent[]
   auditLogs    AuditLog[]
+  clients      Client[]
+  templates    Template[]
+  sites        Site[]
 
   @@map("tenants")
 }
@@ -100,9 +103,111 @@ model Server {
   tenant       Tenant        @relation(fields: [tenantId], references: [id])
   credential   Credential    @relation(fields: [credentialId], references: [id])
   deployEvents DeployEvent[]
+  sites        Site[]
 
   @@index([tenantId])
   @@map("servers")
+}
+
+model Client {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  name        String // business/brand name
+  contactName String?  @map("contact_name")
+  email       String?
+  phone       String?
+  company     String?
+  gstin       String?
+  address     String?
+  city        String?
+  state       String?
+  country     String   @default("IN")
+  websiteUrl  String?  @map("website_url")
+  notes       String?
+  status      String   @default("active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  sites  Site[]
+
+  @@index([tenantId])
+  @@map("clients")
+}
+
+model Template {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String?  @map("tenant_id") @db.Uuid // null = global/stock template
+  name            String
+  category        String // ecom_showcase|offer_awareness|comparison|lead_page|prelander
+  description     String?
+  repoPath        String   @map("repo_path") // storage path of Astro template package
+  version         Int      @default(1)
+  changelog       String?
+  paramSchema     Json     @map("param_schema") // JSON Schema of all fill-in parameters
+  previewImageUrl String?  @map("preview_image_url")
+  thumbnailUrl    String?  @map("thumbnail_url")
+  status          String   @default("active") // active|deprecated
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+  sites  Site[]
+
+  @@index([tenantId])
+  @@map("templates")
+}
+
+model Site {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  name            String // internal label
+  clientId        String    @map("client_id") @db.Uuid
+  serverId        String    @map("server_id") @db.Uuid
+  templateId      String    @map("template_id") @db.Uuid
+  templateVersion Int?      @map("template_version")
+  // domain
+  domain          String    @unique
+  extraDomains    String[]  @default([]) @map("extra_domains")
+  // server-side paths (set during install, M3)
+  siteSystemUser  String?   @map("site_system_user")
+  documentRoot    String?   @map("document_root")
+  // template parameters (filled by operator in wizard)
+  params          Json      @default("{}")
+  // destination (the real store visitors are sent to)
+  destinationUrl  String    @map("destination_url")
+  // tracking config
+  ga4Id           String?   @map("ga4_id")
+  metaPixelId     String?   @map("meta_pixel_id")
+  googleAdsTag    Json?     @map("google_ads_tag") // {conversion_id, conversion_label, remarketing_id}
+  bingUetTag      String?   @map("bing_uet_tag")
+  pushvaultPropertyKey String? @map("pushvault_property_key")
+  callforgeNumber String?   @map("callforge_number")
+  // install state machine (driven in M3)
+  installStatus   String    @default("draft") @map("install_status")
+  // SSL
+  sslStatus       String    @default("none") @map("ssl_status")
+  sslExpiresAt    DateTime? @map("ssl_expires_at") @db.Timestamptz()
+  sslAutoRenew    Boolean   @default(true) @map("ssl_auto_renew")
+  // site health
+  lastVerifiedAt  DateTime? @map("last_verified_at") @db.Timestamptz()
+  lighthouseScore Int?      @map("lighthouse_score")
+  lastUptimeCheck DateTime? @map("last_uptime_check") @db.Timestamptz()
+  uptimeStatus    String?   @map("uptime_status")
+  // lifecycle
+  status          String    @default("draft") // draft|building|published|paused|archived
+  publishedAt     DateTime? @map("published_at") @db.Timestamptz()
+  notes           String?
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  client   Client   @relation(fields: [clientId], references: [id])
+  server   Server   @relation(fields: [serverId], references: [id])
+  template Template @relation(fields: [templateId], references: [id])
+
+  @@index([tenantId])
+  @@map("sites")
 }
 
 model DeployEvent {

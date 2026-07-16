@@ -8,6 +8,9 @@ import { PrismaModule } from './prisma/prisma.module';
 import { VaultModule } from './vault/vault.module';
 import { AuthModule } from './auth/auth.module';
 import { ServersModule } from './servers/servers.module';
+import { ClientsModule } from './clients/clients.module';
+import { TemplatesModule } from './templates/templates.module';
+import { SitesModule } from './sites/sites.module';
 
 @Module({
   imports: [
@@ -22,6 +25,9 @@ import { ServersModule } from './servers/servers.module';
     AuthModule,
     HealthModule,
     ServersModule,
+    ClientsModule,
+    TemplatesModule,
+    SitesModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

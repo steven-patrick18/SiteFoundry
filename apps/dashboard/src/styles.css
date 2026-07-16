@@ -305,3 +305,158 @@ label {
   border-color: #262b38;
   color: #6b7280;
 }
+
+/* ── template gallery ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: #161a23;
+  border: 1px solid #262b38;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.card.selectable {
+  cursor: pointer;
+}
+
+.card.selected {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 1px #4f46e5;
+}
+
+.card-preview {
+  height: 110px;
+  background: #10131b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4b5563;
+  font-size: 13px;
+  border-bottom: 1px solid #262b38;
+}
+
+.card-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-body {
+  padding: 14px;
+}
+
+.card-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.card-body button {
+  margin-top: 10px;
+  width: 100%;
+}
+
+/* ── wizard ── */
+.wizard-steps {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.wstep {
+  font-size: 12px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: #161a23;
+  border: 1px solid #262b38;
+  color: #6b7280;
+}
+
+.wstep.active {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: #fff;
+}
+
+.wstep.done {
+  color: #86efac;
+  border-color: #14532d;
+}
+
+.wizard-panel {
+  max-width: 760px;
+}
+
+.wizard-nav {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.param-block {
+  border: 1px solid #262b38;
+  border-radius: 8px;
+  padding: 14px 16px 6px;
+  margin-bottom: 16px;
+  background: #131722;
+}
+
+.param-block legend {
+  padding: 0 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+.span2 {
+  grid-column: span 2;
+}
+
+.counter {
+  color: #4b5563;
+  font-size: 11px;
+}
+
+.repeat-card {
+  border: 1px solid #1f2635;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  background: #0f1117;
+}
+
+.repeat-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.server-option {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #262b38;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.server-option span {
+  display: block;
+}
+
+.preflight-error {
+  padding: 7px 10px;
+  border-left: 3px solid #ef4444;
+  background: #1a1114;
+  margin: 6px 0;
+  font-size: 13px;
+}
