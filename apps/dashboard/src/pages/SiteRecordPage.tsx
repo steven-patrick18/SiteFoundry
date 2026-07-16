@@ -139,9 +139,9 @@ export default function SiteRecordPage() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          {site.status === 'draft' && (
-            <button onClick={() => navigate(`/sites/new?site=${site.id}`)}>Open wizard</button>
-          )}
+          <button onClick={() => navigate(`/sites/new?site=${site.id}`)}>
+            {site.status === 'draft' ? 'Open wizard' : 'Edit content & products'}
+          </button>
           <button onClick={() => navigate('/sites')}>All sites</button>
         </div>
       </div>

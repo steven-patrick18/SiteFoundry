@@ -116,9 +116,9 @@ export default function SitesPage() {
                 <td className="sub">{s.sslStatus}</td>
                 <td className="actions">
                   <button onClick={() => navigate(`/sites/${s.id}`)}>Open record</button>
-                  {s.status === 'draft' && (
-                    <button onClick={() => navigate(`/sites/new?site=${s.id}`)}>Edit draft</button>
-                  )}
+                  <button onClick={() => navigate(`/sites/new?site=${s.id}`)}>
+                    {s.status === 'draft' ? 'Edit draft' : 'Edit content'}
+                  </button>
                   <button onClick={() => setBuildsFor(s)}>Builds</button>
                 </td>
               </tr>
