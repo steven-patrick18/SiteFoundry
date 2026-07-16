@@ -23,9 +23,11 @@ echo "== SiteFoundry panel provisioning: $PANEL_DOMAIN =="
 export DEBIAN_FRONTEND=noninteractive
 
 # ── base packages ─────────────────────────────────────────────────────────
+# build-essential + python3 let native modules (ssh2/cpu-features) compile.
 apt-get update -y
 apt-get install -y curl git ufw nginx postgresql redis-server \
-  certbot python3-certbot-nginx ca-certificates gnupg openssl
+  certbot python3-certbot-nginx ca-certificates gnupg openssl \
+  build-essential python3 unzip
 
 # Node 20 + pnpm. Pin pnpm to a Node-20-compatible version — pnpm@latest
 # (11.x) requires node:sqlite / Node 22+ and crashes on Node 20.
@@ -49,10 +51,21 @@ fi
 chown -R "$APP_USER":"$APP_USER" "$APP_DIR"
 
 # ── database ──────────────────────────────────────────────────────────────
+# Reuse credentials already written to .env so re-runs stay consistent; the
+# owner role's password is always synced (self-healing after partial runs).
+if [ -f "$APP_DIR/.env" ]; then
+  ENV_DB_PASS="$(sed -n 's#^DATABASE_URL=postgresql://sitefoundry:\([^@]*\)@.*#\1#p' "$APP_DIR/.env" | head -1)"
+  ENV_APP_DB_PASS="$(sed -n 's#^APP_DATABASE_URL=postgresql://sitefoundry_app:\([^@]*\)@.*#\1#p' "$APP_DIR/.env" | head -1)"
+  DB_PASS="${ENV_DB_PASS:-$DB_PASS}"
+  APP_DB_PASS="${ENV_APP_DB_PASS:-$APP_DB_PASS}"
+fi
+
 sudo -u postgres psql -v ON_ERROR_STOP=1 <<SQL
 DO \$\$ BEGIN
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='sitefoundry') THEN
     CREATE ROLE sitefoundry LOGIN PASSWORD '${DB_PASS}';
+  ELSE
+    ALTER ROLE sitefoundry WITH LOGIN PASSWORD '${DB_PASS}';
   END IF;
 END \$\$;
 SELECT 'CREATE DATABASE sitefoundry OWNER sitefoundry'
