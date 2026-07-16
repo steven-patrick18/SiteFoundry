@@ -34,7 +34,11 @@ if ! command -v node >/dev/null 2>&1; then
   curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
   apt-get install -y nodejs
 fi
-npm install -g "pnpm@${PNPM_VERSION}"
+# Remove any stale pnpm/pnpx shims (e.g. from a prior corepack attempt) so
+# the npm global install can't fail with EEXIST.
+rm -f /usr/bin/pnpm /usr/bin/pnpx /usr/local/bin/pnpm /usr/local/bin/pnpx
+corepack disable >/dev/null 2>&1 || true
+npm install -g --force "pnpm@${PNPM_VERSION}"
 
 # ── app user + code ───────────────────────────────────────────────────────
 id -u "$APP_USER" >/dev/null 2>&1 || useradd -m -s /bin/bash "$APP_USER"
