@@ -43,6 +43,10 @@ const envSchema = z.object({
   // deploy sets it to true. PANEL_PUBLIC_URL is the panel's own https URL.
   ALLOW_SELF_UPDATE: z.string().default('false'),
   PANEL_PUBLIC_URL: z.string().default('http://localhost:3000'),
+  // PushVault (sibling product) CDN base. When a site has a PushVault
+  // property key, the build injects <cdn>/pushvault.js and deploys the real
+  // <cdn>/pv-sw.js to the site root. Empty = use the built-in stub.
+  PUSHVAULT_CDN_URL: z.string().default(''),
   JWT_SECRET: z.string().default('dev-only-jwt-secret'),
   INTERNAL_SECRET: z.string().default('dev-only-internal-secret'),
   APP_BASE_URL: z.string().default('http://localhost:5173'),

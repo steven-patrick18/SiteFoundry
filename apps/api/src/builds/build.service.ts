@@ -48,6 +48,7 @@ export class BuildService {
   private readonly workRoot: string;
   private readonly templatesDir: string;
   private readonly panelPublicUrl: string;
+  private readonly pushvaultCdn: string;
 
   constructor(
     config: ConfigService,
@@ -60,6 +61,7 @@ export class BuildService {
     this.panelPublicUrl = (
       config.get<string>('PANEL_PUBLIC_URL') ?? 'http://localhost:3000'
     ).replace(/\/$/, '');
+    this.pushvaultCdn = (config.get<string>('PUSHVAULT_CDN_URL') ?? '').replace(/\/$/, '');
   }
 
   buildDir(buildId: string): string {
@@ -98,6 +100,7 @@ export class BuildService {
           site_key: input.siteId,
           track_url: `${this.panelPublicUrl}/api/v1/public/track`,
           search_url: `${this.panelPublicUrl}/api/v1/public/search`,
+          pushvault_cdn: this.pushvaultCdn,
           tracking: input.tracking,
         },
         null,
@@ -116,17 +119,23 @@ export class BuildService {
       throw new Error(`Build produced no index.html.\n${log.slice(-1000)}`);
     }
 
-    // 4. PushVault service worker at site root (§9 step 4). The stock
-    // template ships a real pv-sw.js in public/; only synthesize one for
-    // custom template packages that lack it.
-    if (input.tracking.pushvault_property_key && !existsSync(join(distDir, 'pv-sw.js'))) {
-      await writeFile(
-        join(distDir, 'pv-sw.js'),
-        "self.addEventListener('push', function (event) {\n" +
-          "  var data = {}; try { data = event.data ? event.data.json() : {}; } catch (e) {}\n" +
-          "  event.waitUntil(self.registration.showNotification(data.title || 'Update', { body: data.body || '' }));\n" +
-          '});\n',
-      );
+    // 4. PushVault service worker at site root (§9 step 4). When a property
+    // key is set and a PushVault CDN is configured, fetch the REAL pv-sw.js
+    // from the PushVault product and write it to the site root — so the
+    // operator never uploads it by hand. Falls back to the template's stub.
+    if (input.tracking.pushvault_property_key && this.pushvaultCdn) {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 15_000);
+        const res = await fetch(`${this.pushvaultCdn}/pv-sw.js`, { signal: controller.signal });
+        clearTimeout(timer);
+        if (res.ok) {
+          await writeFile(join(distDir, 'pv-sw.js'), Buffer.from(await res.arrayBuffer()));
+          this.logger.log(`PushVault pv-sw.js pulled from ${this.pushvaultCdn}`);
+        }
+      } catch (err: any) {
+        this.logger.warn(`PushVault pv-sw.js fetch failed (${err?.message}); keeping stub`);
+      }
     }
 
     // 5. immutable artifact

@@ -54,9 +54,13 @@ const fontStack = `${brand.font ?? 'Inter'}, system-ui, -apple-system, 'Segoe UI
     {t.bing_uet_tag && (
       <script is:inline set:html={`(function(w,d,t,r,u){var f,n,i;w[u]=w[u]||[],f=function(){var o={ti:"${t.bing_uet_tag}",enableAutoSpaTracking:true};o.q=w[u],w[u]=new UET(o),w[u].push("pageLoad")},n=d.createElement(t),n.src=r,n.async=1,n.onload=n.onreadystatechange=function(){var s=this.readyState;s&&s!=="loaded"&&s!=="complete"||(f(),n.onload=n.onreadystatechange=null)},i=d.getElementsByTagName(t)[0],i.parentNode.insertBefore(n,i)})(window,document,"script","//bat.bing.com/bat.js","uetq");`}></script>
     )}
-    {/* ── PushVault (push capture) ── */}
+    {/* ── PushVault (push capture) — real CDN snippet when configured ── */}
     {t.pushvault_property_key && (
-      <script src={href('/pushvault.js')} data-property-key={t.pushvault_property_key} defer></script>
+      <script
+        src={site.pushvault_cdn ? `${site.pushvault_cdn}/pushvault.js` : href('/pushvault.js')}
+        data-property-key={t.pushvault_property_key}
+        defer
+      ></script>
     )}
   </head>
   <body>
