@@ -1,0 +1,42 @@
+---
+// Static product card that links to the on-site product page (never straight
+// to the store). Same .gcard visual as the live-search cards, but with no
+// data-json — so the client overlay handler ignores it and the link navigates.
+import { href } from '../lib/config.js';
+
+const { product: p } = Astro.props;
+const url = href(`/product/${p.slug}/`);
+
+function stars(r) {
+  const n = Math.round(r || 0);
+  return '★'.repeat(n) + '☆'.repeat(5 - n);
+}
+function compact(n) {
+  if (!n) return '';
+  return n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + 'K' : String(n);
+}
+const deliv = [p.shipping_cost, p.delivery_time].filter(Boolean).join(' · ');
+---
+<div class="gcard">
+  <a class="gimg" href={url} aria-label={p.title}>
+    {p.badge && <span class="badge-chip">{p.badge}</span>}
+    {p.image_url && <img src={p.image_url} alt={p.title} loading="lazy" />}
+  </a>
+  <div class="gbody">
+    <a class="gtitle" href={url}>{p.title}</a>
+    <div class="gprice">
+      <span class="amount">{p.price}</span>
+      {p.compare_price && <s>{p.compare_price}</s>}
+    </div>
+    {typeof p.rating === 'number' && (
+      <div class="grating">
+        <span class="gstars">{stars(p.rating)}</span>
+        <span>{p.rating.toFixed(1)}</span>
+        {p.review_count ? <span class="gcount">({compact(p.review_count)})</span> : null}
+      </div>
+    )}
+    {p.store_name && <div class="gstore">{p.store_name}</div>}
+    {deliv && <div class="gdelivery">{deliv}</div>}
+    <a class="gvisit" href={url}>View details ›</a>
+  </div>
+</div>

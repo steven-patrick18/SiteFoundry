@@ -6,8 +6,10 @@ import { ProgressBus } from '../jobs/progress-bus';
 import { JobRunner } from '../jobs/job-runner';
 import { InstallerService } from './installer.service';
 import { InstallController } from './install.controller';
+import { DiscoveryModule } from '../discovery/discovery.module';
 
 @Module({
+  imports: [DiscoveryModule],
   controllers: [InstallController],
   providers: [
     InstallerService,

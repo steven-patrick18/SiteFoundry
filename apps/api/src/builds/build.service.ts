@@ -6,6 +6,7 @@ import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import AdmZip from 'adm-zip';
 import { StorageService } from '../storage/storage.service';
+import { DiscoveryService } from '../discovery/discovery.service';
 
 export interface BuildInput {
   buildId: string;
@@ -53,6 +54,7 @@ export class BuildService {
   constructor(
     config: ConfigService,
     private readonly storage: StorageService,
+    private readonly discovery: DiscoveryService,
   ) {
     const repoRoot = resolve(process.cwd(), '..', '..');
     this.workRoot = config.get<string>('BUILD_WORK_DIR', join(repoRoot, '.local', 'builds'));
@@ -108,10 +110,29 @@ export class BuildService {
       ),
     );
 
+    // 2b. stage the catalog — the accumulated search cache, grouped into
+    // categories. Astro statically generates a /product/<slug>/ and
+    // /category/<slug>/ page for everything here, so the site is multipage
+    // and every product lives on our own domain (good for SEO + ad landing
+    // pages). Best-effort: an empty catalog just yields a single-page site.
+    const catalogPath = join(workDir, 'catalog.json');
+    let categories: Array<{ query: string; title: string; products: any[] }> = [];
+    try {
+      categories = await this.discovery.categories(12, 24);
+    } catch (err: any) {
+      this.logger.warn(`catalog fetch failed (${err?.message}); building single-page`);
+    }
+    await writeFile(catalogPath, JSON.stringify({ categories }, null, 2));
+    this.logger.log(
+      `catalog staged: ${categories.length} categories, ` +
+        `${categories.reduce((n, c) => n + c.products.length, 0)} products`,
+    );
+
     // 3. astro build
     const log = await this.exec('pnpm', ['exec', 'astro', 'build'], templateDir, {
       SF_PARAMS_PATH: paramsPath,
       SF_SITE_PATH: sitePath,
+      SF_CATALOG_PATH: catalogPath,
       SF_OUTDIR: distDir,
       SF_SITE_URL: `https://${input.domain}`,
     });

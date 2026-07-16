@@ -1,0 +1,24 @@
+---
+// Compact site header for inner pages (product/category). Brand → home, and a
+// search box that submits to the home page (?q=…) where the live search runs.
+// A plain GET form → works with zero JS.
+import { params, href } from '../lib/config.js';
+const brand = params.brand ?? {};
+---
+<header class="shop-top">
+  <div class="wrap shop-top-row">
+    <a class="shop-brand" href={href('/')} aria-label={`${brand.business_name} home`}>
+      {brand.logo_url ? <img src={brand.logo_url} alt={brand.business_name} /> : null}
+      <span>{brand.business_name}</span>
+    </a>
+    <form class="sf-header-search" action={href('/')} method="get" role="search">
+      <input
+        name="q"
+        type="search"
+        placeholder="Search any product — live prices across stores…"
+        aria-label="Search products"
+        autocomplete="off"
+      />
+    </form>
+  </div>
+</header>

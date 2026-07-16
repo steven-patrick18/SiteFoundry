@@ -111,7 +111,9 @@ beforeAll(async () => {
   prisma = new PrismaService(config);
   const vault = new VaultService(new LocalDevKmsProvider(randomBytes(32)));
   storage = new StorageService(config);
-  const builds = new BuildService(config, storage);
+  // stub discovery: no cached catalog -> single-page build (unchanged behaviour)
+  const fakeDiscovery = { categories: async () => [] } as any;
+  const builds = new BuildService(config, storage, fakeDiscovery);
   bus = new ProgressBus();
   session = new FakeSshSession();
   const fakeSsh = { connect: async () => session } as any;

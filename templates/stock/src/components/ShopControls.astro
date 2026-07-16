@@ -218,7 +218,8 @@ const searchUrl = site.search_url ?? '';
     // more rows appear. Searching switches to the flat results grid.
     function showResultsView() {
       if (catsBox) catsBox.hidden = true;
-      if (productsSection) productsSection.style.display = '';
+      // explicit 'block' overrides the server-emitted `#products{display:none}`
+      if (productsSection) productsSection.style.display = 'block';
       if (chipsBox) chipsBox.hidden = false;
     }
     function showHomeView() {
@@ -365,10 +366,14 @@ const searchUrl = site.search_url ?? '';
     }
 
     // "See all <category>" jumps into a full live search for that category.
+    // On a server-rendered home the button is an <a> to the category page —
+    // let that navigate normally (multipage). Only the client fallback uses a
+    // <button> with data-q for an in-page live search.
     if (catsBox) {
       catsBox.addEventListener('click', function (e) {
         var all = e.target.closest('.sf-cat-all');
         if (!all) return;
+        if (all.tagName === 'A') return; // real category-page link
         var q = all.getAttribute('data-q') || '';
         if (!q) return;
         input.value = q;
@@ -459,8 +464,22 @@ const searchUrl = site.search_url ?? '';
       if (detail && !detail.hidden) closeDetail();
     });
 
-    // on the home page (no active search), show auto-created category rows
-    loadCategories();
+    // Home view: prefer the server-rendered category rows (static, indexable).
+    // Fall back to a client fetch only when the page shipped without them.
+    if (catsBox && catsBox.querySelector('.sf-cat')) {
+      hasCategories = true;
+      showHomeView();
+    } else {
+      loadCategories();
+    }
+
+    // Deep link from any page's header search: /?q=… runs the live search.
+    var qParam = '';
+    try { qParam = new URLSearchParams(location.search).get('q') || ''; } catch (e) {}
+    if (qParam && SEARCH_URL) {
+      input.value = qParam;
+      runLiveSearch(qParam);
+    }
   }
   if (document.readyState !== 'loading') init();
   else document.addEventListener('DOMContentLoaded', init);

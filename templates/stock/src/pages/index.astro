@@ -4,11 +4,13 @@ import Hero from '../components/Hero.astro';
 import ClaimsBar from '../components/ClaimsBar.astro';
 import ShopControls from '../components/ShopControls.astro';
 import ShopGrid from '../components/ShopGrid.astro';
+import ProductCard from '../components/ProductCard.astro';
 import ProductsGrid from '../components/ProductsGrid.astro';
 import ComparisonTable from '../components/ComparisonTable.astro';
 import LeadForm from '../components/LeadForm.astro';
 import TrustFooter from '../components/TrustFooter.astro';
-import { params, site } from '../lib/config.js';
+import { params, site, href } from '../lib/config.js';
+import { catalogCategories, hasCatalog } from '../lib/catalog.js';
 import { marked } from 'marked';
 
 const category = site.category ?? 'ecom_showcase';
@@ -17,7 +19,7 @@ const disclosure = (params.legal?.affiliate_disclosure_md ?? '').trim();
 const showTopDisclosure = disclosure && ['prelander', 'comparison'].includes(category);
 const products = Array.isArray(params.products) ? params.products : [];
 // catalog pages render as a shopping-results experience (search + chips + grid)
-const shopMode = category === 'ecom_showcase' && products.length >= 2;
+const shopMode = category === 'ecom_showcase' && (products.length >= 2 || hasCatalog);
 const hero = params.hero ?? {};
 ---
 <Base>
@@ -49,10 +51,25 @@ const hero = params.hero ?? {};
     </div>
   )}
 
+  {shopMode && hasCatalog && <style is:inline set:html={`#products{display:none}`} />}
   <main class={shopMode ? 'shop-main' : ''}>
-    {shopMode && (
+    {shopMode && hasCatalog ? (
+      <div id="sf-categories" class="sf-cats wrap">
+        {catalogCategories.map((cat) => (
+          <section class="sf-cat">
+            <div class="sf-cat-head">
+              <h2 class="sf-cat-title">{cat.title}</h2>
+              <a class="sf-cat-all" href={href(`/category/${cat.slug}/`)}>See all {cat.title} ›</a>
+            </div>
+            <div class="sf-slider">
+              {cat.products.map((p) => <ProductCard product={p} />)}
+            </div>
+          </section>
+        ))}
+      </div>
+    ) : shopMode ? (
       <div id="sf-categories" class="sf-cats wrap" hidden></div>
-    )}
+    ) : null}
     {shopMode ? (
       <ShopGrid />
     ) : category === 'comparison' ? (

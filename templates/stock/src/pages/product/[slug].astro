@@ -1,0 +1,189 @@
+---
+import Base from '../../layouts/Base.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import ProductCard from '../../components/ProductCard.astro';
+import TrustFooter from '../../components/TrustFooter.astro';
+import { params, site, href } from '../../lib/config.js';
+import {
+  catalogProducts,
+  categoryBySlug,
+  relatedTo,
+  priceNumber,
+} from '../../lib/catalog.js';
+
+// One static page per product in the catalog (the accumulated search cache).
+export function getStaticPaths() {
+  return catalogProducts.map((product) => ({ params: { slug: product.slug }, props: { product } }));
+}
+
+const { product: p } = Astro.props;
+const brand = params.brand ?? {};
+const cat = categoryBySlug(p.categorySlug);
+const related = relatedTo(p, 8);
+
+const priceN = priceNumber(p.price);
+const compareN = priceNumber(p.compare_price);
+const savePct =
+  compareN && priceN && Number(compareN) > Number(priceN)
+    ? Math.round((1 - Number(priceN) / Number(compareN)) * 100)
+    : 0;
+const deliv = [p.shipping_cost, p.delivery_time].filter(Boolean).join(' · ');
+const seller = p.store_name || 'a major US retailer';
+
+const title = `${p.title} — Price & Where to Buy | ${brand.business_name}`;
+const description =
+  `Compare the live price of the ${p.title}` +
+  (p.price ? ` (${p.price})` : '') +
+  ` from ${seller}` +
+  (typeof p.rating === 'number' ? `, rated ${p.rating}/5` : '') +
+  `. See the best deal across major US stores on ${brand.business_name}.`;
+
+// FAQ content — unique text per product, also emitted as JSON-LD.
+const faqs = [
+  {
+    q: `How much does the ${p.title} cost?`,
+    a:
+      `The ${p.title} is currently listed at ${p.price || 'a competitive price'}` +
+      (p.compare_price ? `, down from ${p.compare_price}` : '') +
+      ` at ${seller}. Prices update as retailers change them.`,
+  },
+  {
+    q: `Where can I buy the ${p.title}?`,
+    a: `You can buy the ${p.title} from ${seller} and other major US retailers. Use the “Go to Store” button on this page to head to the store and complete your purchase.`,
+  },
+  {
+    q: `Is the ${p.title} a good deal right now?`,
+    a:
+      typeof p.rating === 'number'
+        ? `It holds a ${p.rating}/5 rating from ${p.review_count || 'many'} shoppers${savePct ? `, and it's currently ${savePct}% below its usual price` : ''}. Compare it against similar options below before you buy.`
+        : `Compare it against the similar products below to decide — we surface the current price so you can judge the deal.`,
+  },
+];
+
+const jsonLd = {
+  '@context': 'https://schema.org/',
+  '@type': 'Product',
+  name: p.title,
+  ...(p.image_url ? { image: [p.image_url] } : {}),
+  description,
+  ...(p.store_name ? { brand: { '@type': 'Brand', name: p.store_name } } : {}),
+  ...(typeof p.rating === 'number'
+    ? {
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: p.rating,
+          reviewCount: p.review_count || 1,
+        },
+      }
+    : {}),
+  ...(priceN
+    ? {
+        offers: {
+          '@type': 'Offer',
+          priceCurrency: 'USD',
+          price: priceN,
+          availability: 'https://schema.org/InStock',
+          url: `https://${site.domain}${href(`/product/${p.slug}/`)}`,
+          ...(p.store_name ? { seller: { '@type': 'Organization', name: p.store_name } } : {}),
+        },
+      }
+    : {}),
+};
+const faqLd = {
+  '@context': 'https://schema.org/',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a },
+  })),
+};
+---
+<Base title={title} description={description}>
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(jsonLd)} />
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(faqLd)} />
+
+  <SiteHeader />
+
+  <main class="wrap pdp">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href={href('/')}>Home</a>
+      {cat && (
+        <>
+          <span class="sep">›</span>
+          <a href={href(`/category/${cat.slug}/`)}>{cat.title}</a>
+        </>
+      )}
+      <span class="sep">›</span>
+      <span>{p.title}</span>
+    </nav>
+
+    <div class="pdp-main">
+      <div class="pdp-media">
+        {p.image_url ? <img src={p.image_url} alt={p.title} /> : null}
+      </div>
+      <div class="pdp-info">
+        <h1>{p.title}</h1>
+        {typeof p.rating === 'number' && (
+          <div class="grating" style="font-size:14px">
+            <span class="gstars">{'★'.repeat(Math.round(p.rating))}{'☆'.repeat(5 - Math.round(p.rating))}</span>
+            <span>{p.rating.toFixed(1)}</span>
+            {p.review_count ? <span class="gcount">({p.review_count.toLocaleString('en-US')} reviews)</span> : null}
+          </div>
+        )}
+        <div class="pdp-price">
+          <span class="amount">{p.price}</span>
+          {p.compare_price && <s>{p.compare_price}</s>}
+          {savePct > 0 && <span class="save">Save {savePct}%</span>}
+        </div>
+        {p.store_name && <div class="pdp-meta">Sold by <span class="store">{p.store_name}</span></div>}
+        {deliv && <div class="pdp-meta" style="color:#188038;font-weight:500">{deliv}</div>}
+
+        <a
+          class="cta pdp-cta"
+          href={p.link}
+          data-outbound
+          data-product={p.title}
+          rel="nofollow sponsored"
+          target="_blank"
+        >Go to Store →</a>
+        <p class="pdp-note">You’ll be taken to {seller} to complete your purchase. Prices and availability are confirmed at the store.</p>
+      </div>
+    </div>
+
+    <section class="pdp-section">
+      <h2>Product details</h2>
+      <table class="pdp-specs">
+        <tbody>
+          <tr><td>Price</td><td>{p.price || '—'}</td></tr>
+          {p.compare_price && <tr><td>Was</td><td>{p.compare_price}</td></tr>}
+          {p.store_name && <tr><td>Seller</td><td>{p.store_name}</td></tr>}
+          {typeof p.rating === 'number' && <tr><td>Rating</td><td>{p.rating}/5 ({(p.review_count || 0).toLocaleString('en-US')} reviews)</td></tr>}
+          {deliv && <tr><td>Delivery</td><td>{deliv}</td></tr>}
+          {cat && <tr><td>Category</td><td>{cat.title}</td></tr>}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="pdp-section">
+      <h2>Frequently asked questions</h2>
+      {faqs.map((f) => (
+        <div>
+          <p class="faq-q">{f.q}</p>
+          <p class="faq-a">{f.a}</p>
+        </div>
+      ))}
+    </section>
+
+    {related.length > 0 && (
+      <section class="pdp-section">
+        <h2>You might also like</h2>
+        <div class="ggrid">
+          {related.map((rp) => <ProductCard product={rp} />)}
+        </div>
+      </section>
+    )}
+  </main>
+
+  <TrustFooter />
+</Base>
