@@ -132,7 +132,20 @@ const fontStack = `${brand.font ?? 'Inter'}, system-ui, -apple-system, 'Segoe UI
       .gvisit:hover { text-decoration: underline; }
       .gcard .offers { margin: 6px 0 0; border-color: #ebebeb; }
       .gcard .offers summary { color: #1a73e8; font-weight: 500; font-size: 12.5px; padding: 7px 10px; }
-      @media (max-width: 640px) { .ggrid { grid-template-columns: repeat(2, 1fr); } .gimg { height: 140px; } .shop-top-row { flex-wrap: wrap; } }
+      /* on-site product detail */
+      .sf-detail { padding: 20px 0 50px; }
+      .sf-detail-back { background: none; border: 0; color: #1a73e8; font-size: 14px; cursor: pointer; padding: 6px 0; }
+      .sf-detail-back:hover { text-decoration: underline; }
+      .sf-detail-main { display: flex; gap: 32px; align-items: flex-start; margin-top: 10px; flex-wrap: wrap; }
+      .sf-detail-media { flex: 0 0 340px; max-width: 100%; background: #f8f9fa; border-radius: 12px; padding: 20px; text-align: center; }
+      .sf-detail-media img { max-width: 100%; max-height: 340px; object-fit: contain; }
+      .sf-detail-info { flex: 1; min-width: 260px; }
+      .sf-detail-info h1 { font-size: 24px; line-height: 1.25; margin-bottom: 10px; }
+      .sf-detail-price { margin: 12px 0; }
+      .sf-detail-price .amount { font-size: 28px; font-weight: 700; }
+      .sf-detail-price s { color: #70757a; font-size: 16px; margin-left: 8px; }
+      .sf-detail-cta { margin-top: 16px; display: inline-block; }
+      @media (max-width: 640px) { .ggrid { grid-template-columns: repeat(2, 1fr); } .gimg { height: 140px; } .shop-top-row { flex-wrap: wrap; } .sf-detail-media { flex-basis: 100%; } }
       .offers { margin: 4px 0 8px; border: 1px solid #e5e7eb; border-radius: 8px; }
       .offers summary { cursor: pointer; padding: 9px 12px; font-size: 13.5px; font-weight: 600; color: #1d4ed8; list-style-position: inside; }
       .offers .from { color: #15803d; }

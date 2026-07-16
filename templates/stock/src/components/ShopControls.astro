@@ -27,7 +27,7 @@ const searchUrl = site.search_url ?? '';
 ---
 <header class="shop-top">
   <div class="wrap shop-top-row">
-    <a class="shop-brand" href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false">
+    <a class="shop-brand" href="/" aria-label={`${brand.business_name} home`}>
       {brand.logo_url ? <img src={brand.logo_url} alt={brand.business_name} /> : null}
       <span>{brand.business_name}</span>
     </a>
@@ -59,6 +59,27 @@ const searchUrl = site.search_url ?? '';
 <p id="sf-search-empty" class="search-empty wrap" hidden>
   No products match — try a different search or filter.
 </p>
+
+<!-- On-site product detail (keeps visitors on this site before the store) -->
+<section id="sf-detail" class="sf-detail" hidden>
+  <div class="wrap">
+    <button type="button" class="sf-detail-back">← Back to results</button>
+    <div class="sf-detail-main">
+      <div class="sf-detail-media"><img id="sf-detail-img" src="" alt="" /></div>
+      <div class="sf-detail-info">
+        <h1 id="sf-detail-title"></h1>
+        <div id="sf-detail-rating" class="grating"></div>
+        <div id="sf-detail-price" class="sf-detail-price"></div>
+        <div id="sf-detail-store" class="gstore"></div>
+        <div id="sf-detail-deliv" class="gdelivery"></div>
+        <a id="sf-detail-cta" class="cta sf-detail-cta" href="#" data-outbound rel="nofollow sponsored">Go to Store →</a>
+        <p class="sub" style="margin-top:10px">You’ll be taken to the store to complete your purchase.</p>
+      </div>
+    </div>
+    <h2 class="section" style="text-align:left;margin:28px 0 14px">You might also like</h2>
+    <div id="sf-detail-related" class="ggrid"></div>
+  </div>
+</section>
 
 <script is:inline>
 (function () {
@@ -112,7 +133,7 @@ const searchUrl = site.search_url ?? '';
         : '';
       var badge = p.badge ? '<span class="badge-chip">' + esc(p.badge) + '</span>' : '';
       var cmp = p.compare_price ? '<s>' + esc(p.compare_price) + '</s>' : '';
-      return '<div class="gcard" data-price="' + esc(priceNum(p.price)) + '" data-rating="' +
+      return '<div class="gcard" data-json="' + esc(JSON.stringify(p)) + '" data-price="' + esc(priceNum(p.price)) + '" data-rating="' +
         (p.rating || '') + '" data-sale="' + (p.compare_price ? '1' : '0') + '" data-freeship="' +
         (/free/i.test(p.shipping_cost || '') ? '1' : '0') + '" data-stores="' + esc((p.store_name || '').toLowerCase()) + '">' +
         '<a class="gimg" href="' + esc(p.link) + '" data-outbound data-product="' + esc(p.title) + '" rel="nofollow sponsored">' + badge + img + '</a>' +
@@ -241,6 +262,76 @@ const searchUrl = site.search_url ?? '';
         apply();
       });
     }
+
+    // ── on-site product detail (keeps visitors on this site) ──────────────
+    var detail = document.getElementById('sf-detail');
+    var productsSection = document.getElementById('products');
+
+    function openDetail(p) {
+      if (!detail) return;
+      var link = p.link || p.target_url || '#';
+      detail.querySelector('#sf-detail-img').src = p.image_url || '';
+      detail.querySelector('#sf-detail-img').style.display = p.image_url ? '' : 'none';
+      detail.querySelector('#sf-detail-title').textContent = p.title || '';
+      detail.querySelector('#sf-detail-price').innerHTML =
+        '<span class="amount">' + esc(p.price || '') + '</span>' +
+        (p.compare_price ? ' <s>' + esc(p.compare_price) + '</s>' : '');
+      detail.querySelector('#sf-detail-rating').innerHTML =
+        typeof p.rating === 'number'
+          ? '<span class="gstars">' + stars(p.rating) + '</span> ' + p.rating.toFixed(1) +
+            (p.review_count ? ' <span class="gcount">(' + compact(p.review_count) + ')</span>' : '')
+          : '';
+      detail.querySelector('#sf-detail-store').textContent = p.store_name || '';
+      detail.querySelector('#sf-detail-deliv').textContent =
+        [p.shipping_cost, p.delivery_time].filter(Boolean).join(' · ');
+      var cta = detail.querySelector('#sf-detail-cta');
+      cta.href = link;
+      cta.setAttribute('data-product', p.title || '');
+
+      // related = the other cards currently shown
+      var related = cards.filter(function (c) { return c.getAttribute('data-json') && c.querySelector('.gtitle') && c.querySelector('.gtitle').textContent !== p.title; }).slice(0, 5);
+      var rel = detail.querySelector('#sf-detail-related');
+      rel.innerHTML = related.map(function (c) { return c.outerHTML; }).join('');
+
+      if (productsSection) productsSection.style.display = 'none';
+      detail.hidden = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      try { history.pushState({ sfDetail: 1 }, ''); } catch (e) {}
+      if (window.sfTrack) window.sfTrack('cta_click', { product: p.title, step: 'detail_view' });
+    }
+
+    function closeDetail() {
+      if (!detail) return;
+      detail.hidden = true;
+      if (productsSection) productsSection.style.display = '';
+    }
+
+    function cardProduct(card) {
+      var raw = card.getAttribute('data-json');
+      if (!raw) return null;
+      try { return JSON.parse(raw); } catch (e) { return null; }
+    }
+
+    // intercept product clicks anywhere in the grid or related strip
+    document.addEventListener('click', function (e) {
+      var goStore = e.target.closest('.sf-detail-cta');
+      if (goStore) return; // let the outbound link (and sf.js) handle it
+      var card = e.target.closest('.gcard');
+      if (!card) return;
+      var p = cardProduct(card);
+      if (!p) return; // baked-in cards without json fall through to their links
+      e.preventDefault();
+      openDetail(p);
+    }, true);
+
+    if (detail) {
+      detail.querySelector('.sf-detail-back').addEventListener('click', function () {
+        try { history.back(); } catch (e) { closeDetail(); }
+      });
+    }
+    window.addEventListener('popstate', function () {
+      if (detail && !detail.hidden) closeDetail();
+    });
   }
   if (document.readyState !== 'loading') init();
   else document.addEventListener('DOMContentLoaded', init);

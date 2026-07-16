@@ -48,6 +48,7 @@ function compactCount(n) {
           data-stores={storesOf(p)}
           data-sale={p.compare_price ? '1' : '0'}
           data-freeship={freeShip(p) ? '1' : '0'}
+          data-json={JSON.stringify({ title: p.title, price: p.price, compare_price: p.compare_price, rating: p.rating, review_count: p.review_count, store_name: p.store_name, delivery_time: p.delivery_time, shipping_cost: p.shipping_cost, image_url: p.image_url, link: p.target_url })}
         >
           <a class="gimg" href={p.target_url} data-outbound data-product={p.title} rel="nofollow sponsored" aria-label={p.title}>
             {p.image_url && <img src={p.image_url} alt={p.title} loading="lazy" />}
