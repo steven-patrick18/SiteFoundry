@@ -164,6 +164,7 @@ const searchUrl = site.search_url ?? '';
             grid.innerHTML = list.map(cardHtml).join('');
           }
           cards = [].slice.call(grid.querySelectorAll('.gcard'));
+          rebuildStoreChips();
           applySort();
         })
         .catch(function () {
@@ -177,6 +178,33 @@ const searchUrl = site.search_url ?? '';
       grid.innerHTML = originalGrid;
       cards = [].slice.call(grid.querySelectorAll('.gcard'));
       if (empty) empty.hidden = true;
+      rebuildStoreChips();
+    }
+
+    // Store filter chips reflect the actual retailers in the current results
+    // (Apple, Walmart, Best Buy, Amazon, Target, …) — rebuilt on each render.
+    function rebuildStoreChips() {
+      if (!chipsBox) return;
+      var seen = {};
+      var stores = [];
+      cards.forEach(function (c) {
+        var p = cardProduct(c);
+        var name = p && p.store_name;
+        if (name && !seen[name.toLowerCase()]) { seen[name.toLowerCase()] = 1; stores.push(name); }
+      });
+      [].slice.call(chipsBox.querySelectorAll('.chip[data-chip^="store:"]')).forEach(function (c) { c.remove(); });
+      stores.slice(0, 14).forEach(function (name) {
+        var b = document.createElement('button');
+        b.className = 'chip';
+        b.setAttribute('data-chip', 'store:' + name.toLowerCase());
+        b.textContent = name;
+        chipsBox.appendChild(b);
+      });
+      // reset to All since the previously-selected store may be gone
+      activeChip = 'all';
+      [].slice.call(chipsBox.querySelectorAll('.chip')).forEach(function (c) {
+        c.classList.toggle('active', c.getAttribute('data-chip') === 'all');
+      });
     }
 
     // Home page: render products from the panel's cached searches (grows as
@@ -192,6 +220,7 @@ const searchUrl = site.search_url ?? '';
           grid.innerHTML = list.map(cardHtml).join('');
           originalGrid = grid.innerHTML; // this is the home view now
           cards = [].slice.call(grid.querySelectorAll('.gcard'));
+          rebuildStoreChips();
           applySort();
         })
         .catch(function () {});
