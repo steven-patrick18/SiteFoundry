@@ -18,8 +18,11 @@ const disclosure = (params.legal?.affiliate_disclosure_md ?? '').trim();
 // Prelander/comparison show the disclosure prominently near the top (§8).
 const showTopDisclosure = disclosure && ['prelander', 'comparison'].includes(category);
 const products = Array.isArray(params.products) ? params.products : [];
-// catalog pages render as a shopping-results experience (search + chips + grid)
-const shopMode = category === 'ecom_showcase' && (products.length >= 2 || hasCatalog);
+// ecom_showcase is always a shopping/search experience — visitors can search
+// live and the home fills from the catalog (shared search cache). No need to
+// pre-load products for a new site: an empty catalog just shows the search box.
+const shopMode = category === 'ecom_showcase';
+const emptyHome = shopMode && !hasCatalog && products.length < 2;
 const hero = params.hero ?? {};
 ---
 <Base>
@@ -70,6 +73,11 @@ const hero = params.hero ?? {};
     ) : shopMode ? (
       <div id="sf-categories" class="sf-cats wrap" hidden></div>
     ) : null}
+    {emptyHome && (
+      <div id="sf-empty-home" class="wrap sf-empty-home">
+        <p>Search any product above to compare live prices across major US stores.</p>
+      </div>
+    )}
     {shopMode ? (
       <ShopGrid />
     ) : category === 'comparison' ? (

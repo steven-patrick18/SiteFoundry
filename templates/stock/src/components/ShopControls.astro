@@ -216,8 +216,11 @@ const searchUrl = site.search_url ?? '';
     // The home shows one horizontal slider per auto-created category (each
     // distinct thing visitors have searched). As more categories accumulate,
     // more rows appear. Searching switches to the flat results grid.
+    var emptyHome = document.getElementById('sf-empty-home');
+
     function showResultsView() {
       if (catsBox) catsBox.hidden = true;
+      if (emptyHome) emptyHome.hidden = true;
       // explicit 'block' overrides the server-emitted `#products{display:none}`
       if (productsSection) productsSection.style.display = 'block';
       if (chipsBox) chipsBox.hidden = false;
@@ -258,6 +261,7 @@ const searchUrl = site.search_url ?? '';
           if (cats.length < 1) return loadFeatured();
           catsBox.innerHTML = cats.map(categoryRowHtml).join('');
           hasCategories = true;
+          if (emptyHome) emptyHome.hidden = true;
           showHomeView();
         })
         .catch(function () { loadFeatured(); });

@@ -5,6 +5,7 @@ import { BuildService } from '../builds/build.service';
 import { ProgressBus } from '../jobs/progress-bus';
 import { JobRunner } from '../jobs/job-runner';
 import { InstallerService } from './installer.service';
+import { AutoRebuildService } from './auto-rebuild.service';
 import { InstallController } from './install.controller';
 import { DiscoveryModule } from '../discovery/discovery.module';
 
@@ -13,6 +14,7 @@ import { DiscoveryModule } from '../discovery/discovery.module';
   controllers: [InstallController],
   providers: [
     InstallerService,
+    AutoRebuildService,
     BuildService,
     StorageService,
     SshService,

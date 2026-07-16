@@ -497,6 +497,46 @@ export class InstallerService {
     }
   }
 
+  /**
+   * Files-only rebuild + redeploy — rebuilds the template with the CURRENT
+   * catalog (accumulated search cache) and atomically swaps the new release
+   * in. Does NOT touch nginx or SSL, so it's safe to run on a schedule (the
+   * nightly auto-rebuild) without risking Let's Encrypt rate limits. The site
+   * stays live throughout.
+   */
+  async rebuildFiles(tenantId: string, siteId: string): Promise<string> {
+    if (this.running.has(siteId)) {
+      throw new Error('An install or rebuild is already running for this site');
+    }
+    this.running.add(siteId);
+    try {
+      const site = await this.prisma.withTenant(tenantId, (tx) =>
+        tx.site.findFirst({
+          where: { id: siteId },
+          include: { template: true, server: { include: { credential: true } } },
+        }),
+      );
+      if (!site) throw new NotFoundException('Site not found');
+      const session = await this.openSession(site.server);
+      try {
+        const ctx: InstallContext = { tenantId, userId: null, site, server: site.server, session };
+        const detail = await this.stepDeployFiles(ctx);
+        await this.prisma.withTenant(tenantId, (tx) =>
+          tx.site.update({
+            where: { id: siteId },
+            data: { lastVerifiedAt: new Date(), ...(ctx.buildId ? { lastBuildId: ctx.buildId } : {}) },
+          }),
+        );
+        await this.recordEvent(tenantId, siteId, site.serverId, 'deploying_files', 'ok', `auto-rebuild: ${detail}`);
+        return detail as string;
+      } finally {
+        session.close();
+      }
+    } finally {
+      this.running.delete(siteId);
+    }
+  }
+
   /** §7.2 "Force Renew Now" — certbot renew for this site's cert. */
   async renewSsl(tenantId: string, siteId: string): Promise<{ ssl_expires_at: Date | null }> {
     const site = await this.prisma.withTenant(tenantId, (tx) =>

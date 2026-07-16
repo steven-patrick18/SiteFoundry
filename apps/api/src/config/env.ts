@@ -47,6 +47,9 @@ const envSchema = z.object({
   // property key, the build injects <cdn>/pushvault.js and deploys the real
   // <cdn>/pv-sw.js to the site root. Empty = use the built-in stub.
   PUSHVAULT_CDN_URL: z.string().default(''),
+  // Nightly auto-rebuild of live sites so newly-searched products become
+  // permanent product/category pages. Set to 'false' to disable the sweep.
+  AUTO_REBUILD_ENABLED: z.string().default('true'),
   JWT_SECRET: z.string().default('dev-only-jwt-secret'),
   INTERNAL_SECRET: z.string().default('dev-only-internal-secret'),
   APP_BASE_URL: z.string().default('http://localhost:5173'),

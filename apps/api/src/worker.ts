@@ -13,6 +13,9 @@ import { INSTALL_QUEUE, InstallJobData } from './jobs/job-runner';
  * this entrypoint just idles as a placeholder.
  */
 async function bootstrap() {
+  // Mark this process as the worker so process-singleton crons (e.g. the
+  // nightly auto-rebuild) run only in the API process, not here as well.
+  process.env.SF_WORKER = '1';
   const app = await NestFactory.createApplicationContext(AppModule);
   app.enableShutdownHooks();
   const config = app.get(ConfigService);

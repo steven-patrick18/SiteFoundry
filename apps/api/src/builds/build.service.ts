@@ -128,7 +128,9 @@ export class BuildService {
         `${categories.reduce((n, c) => n + c.products.length, 0)} products`,
     );
 
-    // 3. astro build
+    // 3. astro build — clear Astro's content cache first so a template code
+    // update never serves a stale build from the shared stock template dir.
+    await rm(join(templateDir, '.astro'), { recursive: true, force: true });
     const log = await this.exec('pnpm', ['exec', 'astro', 'build'], templateDir, {
       SF_PARAMS_PATH: paramsPath,
       SF_SITE_PATH: sitePath,
