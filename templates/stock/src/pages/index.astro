@@ -2,7 +2,8 @@
 import Base from '../layouts/Base.astro';
 import Hero from '../components/Hero.astro';
 import ClaimsBar from '../components/ClaimsBar.astro';
-import SearchBar from '../components/SearchBar.astro';
+import ShopControls from '../components/ShopControls.astro';
+import ShopGrid from '../components/ShopGrid.astro';
 import ProductsGrid from '../components/ProductsGrid.astro';
 import ComparisonTable from '../components/ComparisonTable.astro';
 import LeadForm from '../components/LeadForm.astro';
@@ -15,13 +16,32 @@ const disclosure = (params.legal?.affiliate_disclosure_md ?? '').trim();
 // Prelander/comparison show the disclosure prominently near the top (§8).
 const showTopDisclosure = disclosure && ['prelander', 'comparison'].includes(category);
 const products = Array.isArray(params.products) ? params.products : [];
-// on-site shopping search for catalog-style pages with 2+ products
-const showSearch = category === 'ecom_showcase' && products.length >= 2;
+// catalog pages render as a shopping-results experience (search + chips + grid)
+const shopMode = category === 'ecom_showcase' && products.length >= 2;
+const hero = params.hero ?? {};
 ---
 <Base>
-  <Hero />
-  <ClaimsBar />
-  {showSearch && <SearchBar count={products.length} />}
+  {shopMode ? (
+    <>
+      <ShopControls />
+      {(hero.headline || hero.cta_text) && (
+        <div class="promo-strip">
+          <div class="wrap promo-row">
+            <span><strong>{hero.headline}</strong>{hero.subheadline ? ` — ${hero.subheadline}` : ''}</span>
+            {hero.cta_text && (
+              <a class="promo-cta" href={site.destination_url} data-outbound rel="nofollow sponsored">{hero.cta_text}</a>
+            )}
+          </div>
+        </div>
+      )}
+      <ClaimsBar />
+    </>
+  ) : (
+    <>
+      <Hero />
+      <ClaimsBar />
+    </>
+  )}
 
   {showTopDisclosure && (
     <div class="wrap">
@@ -29,8 +49,10 @@ const showSearch = category === 'ecom_showcase' && products.length >= 2;
     </div>
   )}
 
-  <main>
-    {category === 'comparison' ? (
+  <main class={shopMode ? 'shop-main' : ''}>
+    {shopMode ? (
+      <ShopGrid />
+    ) : category === 'comparison' ? (
       <ComparisonTable />
     ) : category === 'lead_page' ? (
       <LeadForm />

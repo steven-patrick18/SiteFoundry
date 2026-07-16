@@ -1,0 +1,86 @@
+---
+// Shopping-results product grid: dense white cards — contain-fit image,
+// plain two-line title, bold price with strikethrough + deal tag, gray
+// seller line, yellow stars, green delivery line, per-product price
+// comparison. CTA is an explicit tracked outbound link (§11).
+import { params } from '../lib/config.js';
+import Offers from './Offers.astro';
+
+const products = Array.isArray(params.products) ? params.products : [];
+
+function searchText(p) {
+  return [
+    p.title, p.store_name, p.badge,
+    ...(Array.isArray(p.bullets) ? p.bullets : []),
+    ...(Array.isArray(p.offers) ? p.offers.map((o) => o.store_name) : []),
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+function priceNum(p) {
+  const match = String(p ?? '').replace(/,/g, '').match(/[\d.]+/);
+  return match ? match[0] : '';
+}
+function storesOf(p) {
+  return [p.store_name, ...(Array.isArray(p.offers) ? p.offers.map((o) => o.store_name) : [])]
+    .filter(Boolean).join('|').toLowerCase();
+}
+function freeShip(p) {
+  return /free/i.test(p.shipping_cost ?? '') ||
+    (Array.isArray(p.offers) && p.offers.some((o) => /free/i.test(o.shipping_cost ?? '')));
+}
+function stars(rating) {
+  const r = Math.round(rating);
+  return '★'.repeat(r) + '☆'.repeat(5 - r);
+}
+function compactCount(n) {
+  if (n >= 1000) return (n / 1000).toFixed(n >= 10_000 ? 0 : 1) + 'K';
+  return String(n);
+}
+---
+{products.length > 0 && (
+  <section class="wrap" id="products">
+    <div class="ggrid">
+      {products.map((p) => (
+        <div
+          class="gcard"
+          data-search={searchText(p)}
+          data-price={priceNum(p.price)}
+          data-rating={typeof p.rating === 'number' ? p.rating : ''}
+          data-stores={storesOf(p)}
+          data-sale={p.compare_price ? '1' : '0'}
+          data-freeship={freeShip(p) ? '1' : '0'}
+        >
+          <a class="gimg" href={p.target_url} data-outbound data-product={p.title} rel="nofollow sponsored" aria-label={p.title}>
+            {p.image_url && <img src={p.image_url} alt={p.title} loading="lazy" />}
+          </a>
+          <div class="gbody">
+            <a class="gtitle" href={p.target_url} data-outbound data-product={p.title} rel="nofollow sponsored">{p.title}</a>
+            <div class="gprice">
+              <span class="amount">{p.price}</span>
+              {p.compare_price && <s>{p.compare_price}</s>}
+              {p.compare_price && <span class="gdeal">{p.badge || 'PRICE DROP'}</span>}
+            </div>
+            {typeof p.rating === 'number' && (
+              <div class="grating">
+                <span class="gstars">{stars(p.rating)}</span>
+                <span>{p.rating.toFixed(1)}</span>
+                {typeof p.review_count === 'number' && p.review_count > 0 && (
+                  <span class="gcount">({compactCount(p.review_count)})</span>
+                )}
+              </div>
+            )}
+            {p.store_name && <div class="gstore">{p.store_name}</div>}
+            {(p.shipping_cost || p.delivery_time) && (
+              <div class="gdelivery">
+                {[p.shipping_cost, p.delivery_time].filter(Boolean).join(' · ')}
+              </div>
+            )}
+            <Offers product={p} cta="Go" />
+            <a class="gvisit" href={p.target_url} data-outbound data-product={p.title} rel="nofollow sponsored">
+              Visit store ›
+            </a>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+)}

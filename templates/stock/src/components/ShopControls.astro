@@ -1,0 +1,148 @@
+---
+// Shopping-results chrome: compact sticky header (brand + search + sort)
+// and a filter-chip row (On sale / Free delivery / per-store / price
+// buckets) — the visual language of a shopping comparison page. All
+// filtering is client-side over the static grid: zero network calls.
+import { params } from '../lib/config.js';
+
+const brand = params.brand ?? {};
+const products = Array.isArray(params.products) ? params.products : [];
+
+const stores = [
+  ...new Set(
+    products.flatMap((p) => [
+      p.store_name,
+      ...(Array.isArray(p.offers) ? p.offers.map((o) => o.store_name) : []),
+    ]).filter(Boolean),
+  ),
+].slice(0, 6);
+
+const hasSale = products.some((p) => p.compare_price);
+const hasFreeShip = products.some(
+  (p) =>
+    /free/i.test(p.shipping_cost ?? '') ||
+    (Array.isArray(p.offers) && p.offers.some((o) => /free/i.test(o.shipping_cost ?? ''))),
+);
+---
+<header class="shop-top">
+  <div class="wrap shop-top-row">
+    <a class="shop-brand" href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false">
+      {brand.logo_url ? <img src={brand.logo_url} alt={brand.business_name} /> : null}
+      <span>{brand.business_name}</span>
+    </a>
+    <input
+      id="sf-search-input"
+      type="search"
+      placeholder={`Search ${products.length} products`}
+      autocomplete="off"
+      aria-label="Search products"
+    />
+    <select id="sf-search-sort" aria-label="Sort results">
+      <option value="relevance">Sort: Best match</option>
+      <option value="price-asc">Price: low to high</option>
+      <option value="price-desc">Price: high to low</option>
+      <option value="rating-desc">Top rated</option>
+    </select>
+  </div>
+  <div class="wrap chips" id="sf-chips">
+    <button class="chip active" data-chip="all">All</button>
+    {hasSale && <button class="chip" data-chip="sale">On sale</button>}
+    {hasFreeShip && <button class="chip" data-chip="freeship">Free delivery</button>}
+    <button class="chip" data-chip="rated4">4★ &amp; up</button>
+    {stores.map((store) => (
+      <button class="chip" data-chip={`store:${String(store).toLowerCase()}`}>{store}</button>
+    ))}
+  </div>
+</header>
+<p id="sf-search-empty" class="search-empty wrap" hidden>
+  No products match — try a different search or filter.
+</p>
+
+<script is:inline>
+(function () {
+  'use strict';
+  function init() {
+    var input = document.getElementById('sf-search-input');
+    var sort = document.getElementById('sf-search-sort');
+    var chipsBox = document.getElementById('sf-chips');
+    var empty = document.getElementById('sf-search-empty');
+    var grid = document.querySelector('#products .ggrid');
+    if (!input || !grid) return;
+    var cards = [].slice.call(grid.querySelectorAll('.gcard'));
+    var activeChip = 'all';
+    var searchTimer = null;
+
+    function matchChip(card) {
+      if (activeChip === 'all') return true;
+      if (activeChip === 'sale') return card.getAttribute('data-sale') === '1';
+      if (activeChip === 'freeship') return card.getAttribute('data-freeship') === '1';
+      if (activeChip === 'rated4') return (parseFloat(card.getAttribute('data-rating')) || 0) >= 4;
+      if (activeChip.indexOf('store:') === 0) {
+        var store = activeChip.slice(6);
+        return (card.getAttribute('data-stores') || '').indexOf(store) !== -1;
+      }
+      return true;
+    }
+
+    function matchSearch(card, terms) {
+      if (!terms.length) return true;
+      var hay = card.getAttribute('data-search') || '';
+      for (var i = 0; i < terms.length; i++) {
+        if (hay.indexOf(terms[i]) === -1) return false;
+      }
+      return true;
+    }
+
+    function apply() {
+      var terms = input.value.toLowerCase().split(/\s+/).filter(Boolean);
+      var visible = 0;
+      cards.forEach(function (card) {
+        var show = matchChip(card) && matchSearch(card, terms);
+        card.style.display = show ? '' : 'none';
+        if (show) visible++;
+      });
+      if (empty) empty.hidden = visible !== 0;
+
+      var mode = sort ? sort.value : 'relevance';
+      var ordered = cards.slice();
+      if (mode !== 'relevance') {
+        ordered.sort(function (a, b) {
+          var pa = parseFloat(a.getAttribute('data-price')) || 0;
+          var pb = parseFloat(b.getAttribute('data-price')) || 0;
+          var ra = parseFloat(a.getAttribute('data-rating')) || 0;
+          var rb = parseFloat(b.getAttribute('data-rating')) || 0;
+          if (mode === 'price-asc') return pa - pb;
+          if (mode === 'price-desc') return pb - pa;
+          return rb - ra;
+        });
+      }
+      ordered.forEach(function (card, i) { card.style.order = String(i); });
+    }
+
+    input.addEventListener('input', function () {
+      apply();
+      clearTimeout(searchTimer);
+      var q = input.value.trim();
+      if (q.length >= 2 && window.sfTrack) {
+        searchTimer = setTimeout(function () {
+          window.sfTrack('search', { q: q.slice(0, 120) });
+        }, 700);
+      }
+    });
+    if (sort) sort.addEventListener('change', apply);
+    if (chipsBox) {
+      chipsBox.addEventListener('click', function (e) {
+        var chip = e.target.closest('.chip');
+        if (!chip) return;
+        activeChip = chip.getAttribute('data-chip');
+        [].forEach.call(chipsBox.querySelectorAll('.chip'), function (c) {
+          c.classList.toggle('active', c === chip);
+        });
+        apply();
+      });
+    }
+  }
+  if (document.readyState !== 'loading') init();
+  else document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
