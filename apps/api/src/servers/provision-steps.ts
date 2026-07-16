@@ -10,9 +10,9 @@ export interface ProvisionStep {
 }
 
 const NGINX_BASE_CONF = `
-map $http_upgrade $connection_upgrade { default upgrade; '' close; }
 server_tokens off;
-gzip on;
+# Ubuntu's default nginx.conf already enables gzip; only extend the types
+# (setting "gzip on;" again here is a duplicate directive and fails nginx -t).
 gzip_types text/plain text/css application/json application/javascript text/xml application/xml image/svg+xml;
 gzip_min_length 1024;
 add_header X-Content-Type-Options nosniff always;
