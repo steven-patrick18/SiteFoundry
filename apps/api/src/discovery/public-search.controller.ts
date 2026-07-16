@@ -45,4 +45,12 @@ export class PublicSearchController {
     const out = await this.discovery.publicSearch(String(q), market);
     return { ...out, rate_limited: false };
   }
+
+  /** Home-page products, drawn from recent cached searches (no API cost). */
+  @Public()
+  @Get('featured')
+  async featured(@Query('limit') limit = '12') {
+    const n = Math.min(24, Math.max(1, parseInt(String(limit), 10) || 12));
+    return { results: await this.discovery.featured(n) };
+  }
 }

@@ -111,6 +111,33 @@ export class DiscoveryService {
     };
   }
 
+  /**
+   * Featured products for a site's home page — deduped from the most recent
+   * cached searches (the "local data" that accumulates as visitors search).
+   * Zero API cost; grows automatically. Empty until the first searches land.
+   */
+  async featured(limit = 12): Promise<DiscoveredProduct[]> {
+    const freshSince = new Date(Date.now() - CACHE_TTL_DAYS * 24 * 3600 * 1000);
+    const rows = await this.prisma.admin.searchCache.findMany({
+      where: { engine: 'google_shopping', fetchedAt: { gte: freshSince } },
+      orderBy: { fetchedAt: 'desc' },
+      take: 40,
+    });
+    const seen = new Set<string>();
+    const out: DiscoveredProduct[] = [];
+    for (const row of rows) {
+      const results = (row.results as unknown as DiscoveredProduct[]) ?? [];
+      for (const p of results) {
+        const key = (p.title || '').toLowerCase().slice(0, 60);
+        if (!key || !p.link || seen.has(key)) continue;
+        seen.add(key);
+        out.push(p);
+        if (out.length >= limit) return out;
+      }
+    }
+    return out;
+  }
+
   /** Distinct API fetches this calendar month = credits spent via the panel. */
   usageThisMonth(): Promise<number> {
     return this.monthlyUsage();

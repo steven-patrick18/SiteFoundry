@@ -179,6 +179,24 @@ const searchUrl = site.search_url ?? '';
       if (empty) empty.hidden = true;
     }
 
+    // Home page: render products from the panel's cached searches (grows as
+    // visitors search). Falls back to the baked-in catalog when empty.
+    function loadFeatured() {
+      if (!SEARCH_URL) return;
+      var url = SEARCH_URL.replace(/\/search$/, '/featured') + '?limit=16';
+      fetch(url)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var list = (data && data.results) || [];
+          if (!list.length) return; // keep baked-in catalog
+          grid.innerHTML = list.map(cardHtml).join('');
+          originalGrid = grid.innerHTML; // this is the home view now
+          cards = [].slice.call(grid.querySelectorAll('.gcard'));
+          applySort();
+        })
+        .catch(function () {});
+    }
+
     function matchChip(card) {
       if (activeChip === 'all') return true;
       if (activeChip === 'sale') return card.getAttribute('data-sale') === '1';
@@ -332,6 +350,9 @@ const searchUrl = site.search_url ?? '';
     window.addEventListener('popstate', function () {
       if (detail && !detail.hidden) closeDetail();
     });
+
+    // on the home page (no active search), show cached/searched products
+    loadFeatured();
   }
   if (document.readyState !== 'loading') init();
   else document.addEventListener('DOMContentLoaded', init);
