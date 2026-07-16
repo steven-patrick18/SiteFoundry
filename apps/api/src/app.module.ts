@@ -13,6 +13,7 @@ import { TemplatesModule } from './templates/templates.module';
 import { SitesModule } from './sites/sites.module';
 import { InstallerModule } from './installer/installer.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { DiscoveryModule } from './discovery/discovery.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     SitesModule,
     InstallerModule,
     AnalyticsModule,
+    DiscoveryModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

@@ -30,6 +30,9 @@ const envSchema = z.object({
   KMS_ENDPOINT: z.string().default('http://localhost:4566'),
   KMS_MASTER_KEY_ID: z.string().default(''),
   KMS_REGION: z.string().default('us-east-1'),
+  // SerpApi key for the product discovery finder (optional — feature is
+  // disabled without it). Server-side only; never reaches the browser.
+  SERPAPI_KEY: z.string().default(''),
   JWT_SECRET: z.string().default('dev-only-jwt-secret'),
   INTERNAL_SECRET: z.string().default('dev-only-internal-secret'),
   APP_BASE_URL: z.string().default('http://localhost:5173'),

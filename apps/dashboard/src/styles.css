@@ -577,3 +577,51 @@ a.card-preview {
   font-size: 13px;
   font-weight: 600;
 }
+
+/* ── product finder ── */
+.finder-results {
+  max-height: 420px;
+  overflow-y: auto;
+  border: 1px solid #262b38;
+  border-radius: 8px;
+}
+
+.finder-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #1c212e;
+}
+
+.finder-row img,
+.finder-noimg {
+  width: 46px;
+  height: 46px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #10131b;
+  flex-shrink: 0;
+}
+
+.finder-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  min-width: 0;
+}
+
+.finder-price {
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.finder-price s {
+  color: #6b7280;
+  font-weight: 400;
+  font-size: 12px;
+  margin-left: 6px;
+}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { api, apiStream } from '../lib/api';
 import SchemaForm from '../components/SchemaForm';
+import ProductFinder from '../components/ProductFinder';
 import { ClientModal, Client } from './ClientsPage';
 import { CATEGORY_LABELS, TemplateSummary } from './TemplatesPage';
 
@@ -104,6 +105,24 @@ export default function NewSitePage() {
     () => templates.find((t) => t.id === templateId),
     [templates, templateId],
   );
+
+  /** Imported offers must pass the §8 gate — auto-whitelist their store host
+   * unless it is already the destination. */
+  function addAllowedHost(host: string) {
+    if (!host) return;
+    let destHost = '';
+    try {
+      destHost = new URL(destinationUrl).hostname.replace(/^www\./, '').toLowerCase();
+    } catch {
+      /* destination not set yet */
+    }
+    if (host === destHost) return;
+    setExtraAllowedHosts((prev) => {
+      const list = prev.split(',').map((d) => d.trim().toLowerCase()).filter(Boolean);
+      if (list.includes(host)) return prev;
+      return [...list, host].join(', ');
+    });
+  }
 
   const loadLists = useCallback(async () => {
     try {
@@ -338,6 +357,31 @@ export default function NewSitePage() {
 
       {step === 3 && template?.paramSchema && (
         <div className="wizard-panel">
+          {template.paramSchema.properties?.products && (
+            <ProductFinder
+              products={Array.isArray(params.products) ? params.products : []}
+              onAddProduct={(product, host) => {
+                setParams((prev) => ({
+                  ...prev,
+                  products: [...(Array.isArray(prev.products) ? prev.products : []), product],
+                }));
+                addAllowedHost(host);
+              }}
+              onAddOffer={(index, offer, host) => {
+                setParams((prev) => {
+                  const next = [...(Array.isArray(prev.products) ? prev.products : [])];
+                  if (next[index]) {
+                    next[index] = {
+                      ...next[index],
+                      offers: [...(Array.isArray(next[index].offers) ? next[index].offers : []), offer],
+                    };
+                  }
+                  return { ...prev, products: next };
+                });
+                addAllowedHost(host);
+              }}
+            />
+          )}
           <SchemaForm
             schema={template.paramSchema}
             value={params}
