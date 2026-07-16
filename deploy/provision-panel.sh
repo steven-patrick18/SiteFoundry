@@ -65,10 +65,14 @@ fi
 # the migration's own CREATE ROLE is a no-op (and passwords stay in sync).
 sudo -u postgres psql -v ON_ERROR_STOP=1 <<SQL
 DO \$\$ BEGIN
+  -- BYPASSRLS: the owner/admin connection (migrations, seed, pre-auth login
+  -- lookup, internal hooks) bypasses RLS — like the local superuser did. The
+  -- restricted runtime role sitefoundry_app is NOT granted this and stays
+  -- fully RLS-enforced, preserving tenant isolation.
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='sitefoundry') THEN
-    CREATE ROLE sitefoundry LOGIN CREATEROLE PASSWORD '${DB_PASS}';
+    CREATE ROLE sitefoundry LOGIN CREATEROLE BYPASSRLS PASSWORD '${DB_PASS}';
   ELSE
-    ALTER ROLE sitefoundry WITH LOGIN CREATEROLE PASSWORD '${DB_PASS}';
+    ALTER ROLE sitefoundry WITH LOGIN CREATEROLE BYPASSRLS PASSWORD '${DB_PASS}';
   END IF;
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='sitefoundry_app') THEN
     CREATE ROLE sitefoundry_app LOGIN PASSWORD '${APP_DB_PASS}';
