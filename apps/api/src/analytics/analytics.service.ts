@@ -150,10 +150,13 @@ export class AnalyticsService implements OnModuleInit {
   }
 
   private range(q: StatsQuery): { fromTs: Date; toTs: Date } {
-    const toTs = q.to ? new Date(q.to) : new Date();
+    // Default window ends 1 min in the future: rows are stamped with the DB
+    // clock, which can read a few ms ahead of this process — a strict
+    // "now" cutoff silently drops the freshest events.
+    const toTs = q.to ? new Date(q.to) : new Date(Date.now() + 60_000);
     const fromTs = q.from
       ? new Date(q.from)
-      : new Date(toTs.getTime() - 30 * 24 * 3600 * 1000);
+      : new Date(toTs.getTime() - 30 * 24 * 3600 * 1000 - 60_000);
     return { fromTs, toTs };
   }
 }
