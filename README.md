@@ -7,8 +7,10 @@ a full operations record per client, site, server, domain, SSL cert, and ad
 campaign.
 
 Spec: `SiteFoundry Developer Build Doc v3 Final.docx` (v3.0, in repo root).
-Built milestone by milestone (§14 of the doc). **Current state: project
-scaffolding only — no milestone features yet.**
+Built milestone by milestone (§14 of the doc). **Current state: Milestone M1
+complete** — credential vault (envelope encryption), multi-tenant schema with
+Postgres RLS, JWT auth, server management with SSH connection test + facts
+probe + host-key pinning, and streamed base provisioning.
 
 ## Stack (fixed by spec §2)
 
@@ -30,21 +32,36 @@ scaffolding only — no milestone features yet.**
   Not yet installed on this machine; the API runs without it but reports its
   database/redis dependencies as `unavailable`.
 
-## Quickstart (§15)
+## Quickstart — no Docker (current dev setup on this machine)
+
+```bash
+pnpm install
+# .env is already set up for the embedded DB (port 55432; 5432 is in a
+# Windows-reserved range here). KMS_PROVIDER=local-dev needs no infra.
+
+pnpm db:dev                # terminal 1: embedded Postgres 17 (data in .local/)
+pnpm prisma migrate dev    # terminal 2: apply migrations
+pnpm seed                  # creates tenant + admin@sitefoundry.local / admin12345
+pnpm dev                   # API :3000 + dashboard :5173
+```
+
+Sign in at http://localhost:5173 with `admin@sitefoundry.local` / `admin12345`.
+
+## Quickstart — with Docker (§15, production-parity)
 
 ```bash
 # 1. Infrastructure
-docker compose up -d          # postgres, redis, minio, localstack
+docker compose up -d          # postgres 15, redis, minio, localstack
 
 # 2. Create the mock KMS master key (needs awslocal or aws --endpoint-url)
 awslocal kms create-key --description "sitefoundry-dev-master"
-# put KeyMetadata.KeyId into .env as KMS_MASTER_KEY_ID
+# put KeyMetadata.KeyId into .env as KMS_MASTER_KEY_ID and set KMS_PROVIDER=aws
 
 # 3. Install + configure
 pnpm install
-cp .env.example .env
+cp .env.example .env       # point DATABASE_URL at :5432
 
-# 4. Database (from Milestone M1 onward)
+# 4. Database
 pnpm prisma migrate dev
 pnpm seed
 
@@ -54,6 +71,8 @@ pnpm worker     # deploy/build worker (separate terminal)
 ```
 
 Health check: `GET http://localhost:3000/api/v1/health`
+Tests: `pnpm --filter @sitefoundry/api test` (vault crypto + RLS isolation —
+the RLS suite needs the dev database running)
 
 ## Repo layout
 

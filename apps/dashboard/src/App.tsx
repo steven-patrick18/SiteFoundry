@@ -1,5 +1,7 @@
-import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
+import { NavLink, Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
 import { SITEFOUNDRY_VERSION } from '@sitefoundry/shared';
+import { getToken, setToken } from './lib/api';
+import LoginPage from './pages/LoginPage';
 import ServersPage from './pages/ServersPage';
 import ClientsPage from './pages/ClientsPage';
 import TemplatesPage from './pages/TemplatesPage';
@@ -14,7 +16,9 @@ const NAV = [
   { to: '/settings', label: 'Settings' },
 ];
 
-export default function App() {
+function Shell() {
+  const navigate = useNavigate();
+  if (!getToken()) return <Navigate to="/login" replace />;
   return (
     <div className="layout">
       <aside className="sidebar">
@@ -29,17 +33,35 @@ export default function App() {
             </NavLink>
           ))}
         </nav>
+        <button
+          className="logout"
+          onClick={() => {
+            setToken(null);
+            navigate('/login');
+          }}
+        >
+          Sign out
+        </button>
       </aside>
       <main className="content">
-        <Routes>
-          <Route path="/" element={<Navigate to="/servers" replace />} />
-          <Route path="/servers" element={<ServersPage />} />
-          <Route path="/clients" element={<ClientsPage />} />
-          <Route path="/templates" element={<TemplatesPage />} />
-          <Route path="/sites" element={<SitesPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-        </Routes>
+        <Outlet />
       </main>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route element={<Shell />}>
+        <Route path="/" element={<Navigate to="/servers" replace />} />
+        <Route path="/servers" element={<ServersPage />} />
+        <Route path="/clients" element={<ClientsPage />} />
+        <Route path="/templates" element={<TemplatesPage />} />
+        <Route path="/sites" element={<SitesPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+      </Route>
+    </Routes>
   );
 }

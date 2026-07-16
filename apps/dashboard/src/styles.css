@@ -89,3 +89,219 @@ body {
 .api-status code {
   color: #93c5fd;
 }
+
+/* ── forms & buttons ── */
+button {
+  background: #2b3245;
+  color: #e5e7eb;
+  border: 1px solid #3b4358;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: #39415a;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+button.danger {
+  border-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+input,
+select,
+textarea {
+  background: #0f1117;
+  border: 1px solid #2b3245;
+  border-radius: 6px;
+  color: #e5e7eb;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  width: 100%;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 12px;
+}
+
+.error {
+  color: #fca5a5;
+  font-size: 13px;
+  margin: 8px 0;
+}
+
+/* ── login ── */
+.login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  width: 340px;
+  background: #161a23;
+  border: 1px solid #262b38;
+  border-radius: 10px;
+  padding: 28px;
+}
+
+.login-card button {
+  width: 100%;
+  margin-top: 8px;
+  background: #4f46e5;
+  border-color: #4f46e5;
+}
+
+/* ── page furniture ── */
+.page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.sub {
+  font-size: 11.5px;
+  color: #6b7280;
+}
+
+.mono {
+  font-family: ui-monospace, monospace;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #0f1117;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.data-table th {
+  text-align: left;
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 8px 10px;
+  border-bottom: 1px solid #262b38;
+}
+
+.data-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #1c212e;
+  vertical-align: top;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ── modal ── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal {
+  width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #161a23;
+  border: 1px solid #2b3245;
+  border-radius: 10px;
+  padding: 24px;
+}
+
+.modal h2 {
+  margin-bottom: 6px;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 14px;
+  margin-top: 12px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* ── SSE stream panel ── */
+.stream-panel {
+  margin-top: 24px;
+  background: #10131b;
+  border: 1px solid #262b38;
+  border-radius: 8px;
+  padding: 16px;
+  font-family: ui-monospace, monospace;
+  font-size: 12.5px;
+}
+
+.stream-panel h2 {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.stream-line {
+  padding: 3px 0;
+}
+
+.stream-line.ok,
+.stream-line.done {
+  color: #86efac;
+}
+
+.stream-line.fail {
+  color: #fca5a5;
+}
+
+.stream-line.start {
+  color: #93c5fd;
+}
+
+.stream-panel button {
+  margin-top: 12px;
+}
+
+.logout {
+  margin-top: 24px;
+  width: 100%;
+  background: transparent;
+  border-color: #262b38;
+  color: #6b7280;
+}

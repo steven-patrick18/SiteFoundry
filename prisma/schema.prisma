@@ -1,8 +1,10 @@
-// SiteFoundry database schema.
-// Models (tenants, users, credentials, servers, clients, templates, sites,
-// builds, deploy_events, campaign_links, ad_integrations, visits, leads,
-// audit_log) land with Milestone M1 — along with tenant RLS policies applied
-// via raw-SQL migrations.
+// SiteFoundry database schema — Milestone M1 tables (§3 of the build doc):
+// tenants, users, credentials, servers, deploy_events, audit_log.
+// Sites/builds/templates/clients land with M2–M3; visits/leads with M4–M5.
+//
+// Every tenant table carries tenant_id; RLS policies (enable + force +
+// tenant_isolation) are applied in the *_rls migration. The API runs as the
+// restricted `sitefoundry_app` role — only migrations/seed use the owner role.
 
 generator client {
   provider = "prisma-client-js"
@@ -11,4 +13,130 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  brandName         String?  @map("brand_name")
+  brandLogoUrl      String?  @map("brand_logo_url")
+  brandPrimaryColor String?  @map("brand_primary_color")
+  customDomain      String?  @map("custom_domain")
+  plan              String   @default("internal") // internal|starter|agency|enterprise
+  status            String   @default("active")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  users        User[]
+  credentials  Credential[]
+  servers      Server[]
+  deployEvents DeployEvent[]
+  auditLogs    AuditLog[]
+
+  @@map("tenants")
+}
+
+model User {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String    @map("tenant_id") @db.Uuid
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  role         String // admin|builder|viewer
+  lastLoginAt  DateTime? @map("last_login_at") @db.Timestamptz()
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@map("users")
+}
+
+model Credential {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  kind        String // ssh_private_key|ssh_password|oauth_token|api_token
+  label       String
+  ciphertext  Bytes // AES-256-GCM encrypted secret — NEVER returned by any endpoint
+  dekWrapped  Bytes     @map("dek_wrapped") // DEK wrapped by KMS master key
+  iv          Bytes
+  authTag     Bytes     @map("auth_tag")
+  fingerprint String? // SSH key SHA256 fingerprint (safe to show)
+  createdBy   String?   @map("created_by") @db.Uuid
+  lastUsedAt  DateTime? @map("last_used_at") @db.Timestamptz()
+  rotatedAt   DateTime? @map("rotated_at") @db.Timestamptz()
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id])
+  servers Server[]
+
+  @@index([tenantId])
+  @@map("credentials")
+}
+
+model Server {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  name            String
+  host            String
+  port            Int       @default(22)
+  sshUsername     String    @map("ssh_username")
+  authType        String    @map("auth_type") // ssh_key|password
+  credentialId    String    @map("credential_id") @db.Uuid
+  provider        String? // hetzner|aws|contabo|do|other (label only)
+  os              String?
+  osVersion       String?   @map("os_version")
+  webServer       String    @default("nginx") @map("web_server")
+  baseProvisioned Boolean   @default(false) @map("base_provisioned")
+  status          String    @default("pending") // pending|connected|provisioning_base|ready|unreachable|error
+  lastCheckedAt   DateTime? @map("last_checked_at") @db.Timestamptz()
+  facts           Json      @default("{}")
+  hostKey         String?   @map("host_key") // pinned SSH host key (base64) — fail on mismatch
+  notes           String?
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  credential   Credential    @relation(fields: [credentialId], references: [id])
+  deployEvents DeployEvent[]
+
+  @@index([tenantId])
+  @@map("servers")
+}
+
+model DeployEvent {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  siteId         String?  @map("site_id") @db.Uuid // FK added when sites table lands (M2/M3)
+  serverId       String   @map("server_id") @db.Uuid
+  step           String
+  status         String // start|ok|fail
+  commandSummary String?  @map("command_summary") // SANITIZED — never contains secrets
+  outputTail     String?  @map("output_tail") // last 500 chars of ssh output
+  at             DateTime @default(now()) @db.Timestamptz()
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  server Server @relation(fields: [serverId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, serverId, at])
+  @@map("deploy_events")
+}
+
+model AuditLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id") @db.Uuid
+  before     Json?
+  after      Json?
+  ip         String?
+  at         DateTime @default(now()) @db.Timestamptz()
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, at])
+  @@map("audit_log")
 }

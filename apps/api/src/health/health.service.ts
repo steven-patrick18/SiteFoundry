@@ -32,6 +32,7 @@ export class HealthService {
       maxRetriesPerRequest: 0,
       retryStrategy: () => null,
     });
+    redis.on('error', () => undefined); // reported via return value, not logs
     try {
       await redis.connect();
       await redis.ping();

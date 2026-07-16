@@ -11,11 +11,31 @@
     "worker": "pnpm --filter @sitefoundry/api worker",
     "build": "pnpm -r build",
     "seed": "tsx prisma/seed.ts",
+    "db:dev": "tsx scripts/dev-db.ts",
     "prisma": "prisma"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
+    "bcryptjs": "^3.0.3",
+    "embedded-postgres": "17.5.0-beta.15",
     "prisma": "^5.22.0",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@prisma/engines",
+      "prisma",
+      "esbuild",
+      "embedded-postgres",
+      "@embedded-postgres/windows-x64",
+      "bcrypt",
+      "cpu-features",
+      "ssh2"
+    ]
+  },
+  "dependencies": {
+    "@prisma/client": "5.22.0"
   }
 }
