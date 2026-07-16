@@ -1,15 +1,34 @@
 ---
 import { params } from '../lib/config.js';
 import OfferMeta from './OfferMeta.astro';
+import Offers from './Offers.astro';
 const products = Array.isArray(params.products) ? params.products : [];
 const cta = params.hero?.cta_text ?? 'Buy Now';
+
+/** searchable haystack + numeric price/rating for the search script */
+function searchText(p) {
+  return [
+    p.title, p.store_name, p.badge,
+    ...(Array.isArray(p.bullets) ? p.bullets : []),
+    ...(Array.isArray(p.offers) ? p.offers.map((o) => o.store_name) : []),
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+function priceNum(p) {
+  const match = String(p ?? '').replace(/,/g, '').match(/[\d.]+/);
+  return match ? match[0] : '';
+}
 ---
 {products.length > 0 && (
   <section class="wrap" id="products">
     <h2 class="section">Top picks</h2>
     <div class="grid">
       {products.map((p) => (
-        <div class="product">
+        <div
+          class="product"
+          data-search={searchText(p)}
+          data-price={priceNum(p.price)}
+          data-rating={typeof p.rating === 'number' ? p.rating : ''}
+        >
           {p.badge && <span class="badge-chip">{p.badge}</span>}
           {p.image_url && <img src={p.image_url} alt={p.title} loading="lazy" />}
           <div class="pbody">
@@ -26,6 +45,7 @@ const cta = params.hero?.cta_text ?? 'Buy Now';
                 {p.bullets.map((b) => <li>{b}</li>)}
               </ul>
             )}
+            <Offers product={p} />
             <a class="cta" href={p.target_url} data-outbound data-product={p.title} rel="nofollow sponsored">{cta}</a>
           </div>
         </div>

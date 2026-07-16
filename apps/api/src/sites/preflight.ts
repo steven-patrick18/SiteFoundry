@@ -94,25 +94,38 @@ export function runPreflight(input: PreflightInput): PreflightResult {
     );
   }
 
-  // -- outbound links stay on the declared destination (§8) -------------------
-  const products = Array.isArray(p.products) ? p.products : [];
-  products.forEach((product: any, i: number) => {
-    const url = product?.target_url;
-    if (!url) {
-      err(`products[${i}].target_url`, 'Product link is required');
+  // -- outbound links stay on declared destinations (§8) ----------------------
+  const allowedList = [...allowedHosts].join(', ');
+  const checkOutbound = (field: string, url: unknown, label: string) => {
+    if (!url || typeof url !== 'string') {
+      err(field, `${label} is required`);
       return;
     }
     if (!isHttps(url)) {
-      err(`products[${i}].target_url`, 'Product link must be HTTPS');
+      err(field, `${label} must be HTTPS`);
       return;
     }
     const host = hostOf(url);
     if (host && destHost && !allowedHosts.has(host)) {
       err(
-        `products[${i}].target_url`,
-        `Outbound link goes off-destination (${host}) — links must stay on ${destHost}`,
+        field,
+        `Outbound link goes off-destination (${host}) — allowed stores: ${allowedList}`,
       );
     }
+  };
+
+  const products = Array.isArray(p.products) ? p.products : [];
+  products.forEach((product: any, i: number) => {
+    checkOutbound(`products[${i}].target_url`, product?.target_url, 'Product link');
+    // multi-store offers (price comparison) obey the same gate
+    const offers = Array.isArray(product?.offers) ? product.offers : [];
+    offers.forEach((offer: any, j: number) => {
+      if (!offer?.store_name?.trim()) {
+        err(`products[${i}].offers[${j}].store_name`, 'Offer store name is required');
+      }
+      checkOutbound(`products[${i}].offers[${j}].target_url`, offer?.target_url, 'Offer link');
+    });
+    if (offers.length > 6) err(`products[${i}].offers`, 'Maximum 6 offers per product');
   });
   if (products.length > 12) err('products', 'Maximum 12 products');
 

@@ -30,3 +30,13 @@ export const site = readJson('SF_SITE_PATH', {
 export function outbound(url) {
   return url || site.destination_url;
 }
+
+/**
+ * Base path prefix. Empty for real deployments (sites live at the domain
+ * root); set via SF_BASE for panel demo previews served under a subpath.
+ */
+export const base = (process.env.SF_BASE ?? '').replace(/\/$/, '');
+
+export function href(path) {
+  return `${base}${path}`;
+}

@@ -171,6 +171,9 @@ model Site {
   // domain
   domain          String    @unique
   extraDomains    String[]  @default([]) @map("extra_domains")
+  // additional outbound store hosts allowed by the compliance gate (§8) —
+  // lets one page compare offers across several declared stores
+  extraAllowedHosts String[] @default([]) @map("extra_allowed_hosts")
   // server-side paths (set during install, M3)
   siteSystemUser  String?   @map("site_system_user")
   documentRoot    String?   @map("document_root")

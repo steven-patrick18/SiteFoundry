@@ -3,6 +3,7 @@
 // the columns a US comparison shopper expects, with a recommended pick row.
 import { params } from '../lib/config.js';
 import OfferMeta from './OfferMeta.astro';
+import Offers from './Offers.astro';
 const products = Array.isArray(params.products) ? params.products : [];
 const cta = params.hero?.cta_text ?? 'Check Price';
 ---
@@ -25,6 +26,7 @@ const cta = params.hero?.cta_text ?? 'Check Price';
                     {i === 0 && <span class="pick-badge">Our pick</span>}
                     {p.badge && i !== 0 && <span class="badge-chip inline">{p.badge}</span>}
                     <OfferMeta product={p} />
+                    <Offers product={p} cta="Go" />
                   </div>
                 </div>
               </td>

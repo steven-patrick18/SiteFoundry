@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import Hero from '../components/Hero.astro';
 import ClaimsBar from '../components/ClaimsBar.astro';
+import SearchBar from '../components/SearchBar.astro';
 import ProductsGrid from '../components/ProductsGrid.astro';
 import ComparisonTable from '../components/ComparisonTable.astro';
 import LeadForm from '../components/LeadForm.astro';
@@ -13,10 +14,14 @@ const category = site.category ?? 'ecom_showcase';
 const disclosure = (params.legal?.affiliate_disclosure_md ?? '').trim();
 // Prelander/comparison show the disclosure prominently near the top (§8).
 const showTopDisclosure = disclosure && ['prelander', 'comparison'].includes(category);
+const products = Array.isArray(params.products) ? params.products : [];
+// on-site shopping search for catalog-style pages with 2+ products
+const showSearch = category === 'ecom_showcase' && products.length >= 2;
 ---
 <Base>
   <Hero />
   <ClaimsBar />
+  {showSearch && <SearchBar count={products.length} />}
 
   {showTopDisclosure && (
     <div class="wrap">

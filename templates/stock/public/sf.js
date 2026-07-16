@@ -98,6 +98,8 @@
     else document.addEventListener('DOMContentLoaded', fn);
   }
 
+  window.sfTrack = send; // used by the on-site search (and future widgets)
+
   onReady(function () {
     passthrough();
     send('pageview');

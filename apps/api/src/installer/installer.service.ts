@@ -111,6 +111,7 @@ export class InstallerService {
         destinationUrl: site.destinationUrl,
         templateCategory: site.template.category,
         paramSchema: site.template.paramSchema,
+        extraAllowedHosts: site.extraAllowedHosts,
       });
       if (!result.ok) {
         await this.fail(tenantId, siteId, site.serverId, 'preflight',

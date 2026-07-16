@@ -1,0 +1,53 @@
+---
+// Multi-store price comparison per product ("Compare prices" like a
+// shopping results page). Offers are sorted cheapest-first at build time.
+// Pure HTML <details> — no JS cost.
+const { product, cta = 'Go to store' } = Astro.props;
+
+function priceNum(p) {
+  const match = String(p ?? '').replace(/,/g, '').match(/[\d.]+/);
+  return match ? parseFloat(match[0]) : Number.POSITIVE_INFINITY;
+}
+
+const offers = Array.isArray(product.offers)
+  ? [...product.offers].sort((a, b) => priceNum(a.price) - priceNum(b.price))
+  : [];
+const cheapest = offers.length > 0 ? offers[0] : null;
+---
+{offers.length > 0 && (
+  <details class="offers">
+    <summary>
+      Compare {offers.length} prices
+      {cheapest?.price && <span class="from"> · from {cheapest.price}</span>}
+    </summary>
+    <table class="offers-table">
+      <tbody>
+        {offers.map((offer, i) => (
+          <tr class={i === 0 ? 'best' : ''}>
+            <td>
+              <strong>{offer.store_name}</strong>
+              {i === 0 && <span class="pick-badge">Lowest price</span>}
+              {offer.badge && i !== 0 && <span class="badge-chip inline">{offer.badge}</span>}
+            </td>
+            <td class="offer-price">{offer.price}</td>
+            <td class="delivery-cell">
+              {offer.shipping_cost && <div class="ship">{offer.shipping_cost}</div>}
+              {offer.delivery_time && <div>{offer.delivery_time}</div>}
+            </td>
+            <td>
+              <a
+                class="cta offer-cta"
+                href={offer.target_url}
+                data-outbound
+                data-product={`${product.title} @ ${offer.store_name}`}
+                rel="nofollow sponsored"
+              >
+                {cta}
+              </a>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </details>
+)}

@@ -59,6 +59,11 @@ const products = [
     badge: 'Best seller',
     bullets: ['ENERGY STAR certified', 'Cools up to 550 sq ft', 'WiFi + voice control', '10-year compressor warranty'],
     target_url: `${DEST}/products/arcticpro-12k`,
+    offers: [
+      { store_name: 'Acme Comfort Store', price: '$329.99', shipping_cost: 'Free delivery', delivery_time: 'Get it by Tue, Jul 21', target_url: `${DEST}/products/arcticpro-12k` },
+      { store_name: 'DealZone', price: '$324.50', shipping_cost: '$12.99 shipping', delivery_time: 'Get it Thu, Jul 23', target_url: 'https://dealzone-demo.example/p/arcticpro-12k' },
+      { store_name: 'MegaMart', price: '$339.00', shipping_cost: 'Free delivery', delivery_time: 'Get it by Mon, Jul 20', badge: 'Fastest delivery', target_url: 'https://megamart-demo.example/item/arcticpro-12k' },
+    ],
   },
   {
     title: 'BreezeMax 8,000 BTU Window AC',
@@ -73,6 +78,10 @@ const products = [
     badge: 'Budget pick',
     bullets: ['Cools up to 350 sq ft', 'Easy self-install kit', 'Quiet 52 dB night mode'],
     target_url: `${DEST}/products/breezemax-8k`,
+    offers: [
+      { store_name: 'Acme Comfort Store', price: '$229.99', shipping_cost: 'Free delivery', delivery_time: 'Get it by Wed, Jul 22', target_url: `${DEST}/products/breezemax-8k` },
+      { store_name: 'MegaMart', price: '$219.00', shipping_cost: 'Free delivery', delivery_time: 'Get it by Thu, Jul 23', target_url: 'https://megamart-demo.example/item/breezemax-8k' },
+    ],
   },
   {
     title: 'CoolNest 10,000 BTU Portable AC',
@@ -232,6 +241,7 @@ for (const [category, label, hue] of CATEGORIES) {
       SF_PARAMS_PATH: paramsPath,
       SF_SITE_PATH: sitePath,
       SF_OUTDIR: outDir,
+      SF_BASE: `/previews/${category}`,
       SF_SITE_URL: `https://preview.sitefoundry.local`,
     },
     shell: process.platform === 'win32',

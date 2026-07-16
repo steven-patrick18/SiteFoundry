@@ -1,0 +1,97 @@
+---
+// On-site shopping search (client-side over the page catalog): instant
+// filtering, sort by price/rating, per-product multi-store price comparison.
+// Static + zero network calls, so Lighthouse stays fast.
+const { count } = Astro.props;
+---
+<section class="searchbar" id="search">
+  <div class="wrap searchbar-row">
+    <input
+      id="sf-search-input"
+      type="search"
+      placeholder={`Search ${count} products — brand, feature, store…`}
+      autocomplete="off"
+      aria-label="Search products"
+    />
+    <select id="sf-search-sort" aria-label="Sort results">
+      <option value="relevance">Best match</option>
+      <option value="price-asc">Price: low to high</option>
+      <option value="price-desc">Price: high to low</option>
+      <option value="rating-desc">Top rated</option>
+    </select>
+  </div>
+  <div class="wrap">
+    <p id="sf-search-empty" class="search-empty" hidden>
+      No products match your search — try a different word.
+    </p>
+  </div>
+</section>
+
+<script is:inline>
+(function () {
+  'use strict';
+  function init() {
+  var input = document.getElementById('sf-search-input');
+  var sort = document.getElementById('sf-search-sort');
+  var empty = document.getElementById('sf-search-empty');
+  var grid = document.querySelector('#products .grid');
+  if (!input || !grid) return;
+  var cards = [].slice.call(grid.querySelectorAll('.product'));
+  var searchTimer = null;
+
+  function tokens(q) {
+    return q.toLowerCase().split(/\s+/).filter(Boolean);
+  }
+
+  function score(card, terms) {
+    var hay = card.getAttribute('data-search') || '';
+    var hit = 0;
+    for (var i = 0; i < terms.length; i++) {
+      if (hay.indexOf(terms[i]) === -1) return -1; // all terms must match
+      hit++;
+    }
+    return hit;
+  }
+
+  function apply() {
+    var terms = tokens(input.value);
+    var visible = 0;
+    cards.forEach(function (card) {
+      var show = terms.length === 0 || score(card, terms) >= 0;
+      card.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    if (empty) empty.hidden = visible !== 0;
+
+    var mode = sort ? sort.value : 'relevance';
+    var ordered = cards.slice();
+    if (mode !== 'relevance') {
+      ordered.sort(function (a, b) {
+        var pa = parseFloat(a.getAttribute('data-price')) || 0;
+        var pb = parseFloat(b.getAttribute('data-price')) || 0;
+        var ra = parseFloat(a.getAttribute('data-rating')) || 0;
+        var rb = parseFloat(b.getAttribute('data-rating')) || 0;
+        if (mode === 'price-asc') return pa - pb;
+        if (mode === 'price-desc') return pb - pa;
+        return rb - ra; // rating-desc
+      });
+    }
+    ordered.forEach(function (card, i) { card.style.order = String(i); });
+  }
+
+  input.addEventListener('input', function () {
+    apply();
+    clearTimeout(searchTimer);
+    var q = input.value.trim();
+    if (q.length >= 2 && window.sfTrack) {
+      searchTimer = setTimeout(function () {
+        window.sfTrack('search', { q: q.slice(0, 120) });
+      }, 700);
+    }
+  });
+  if (sort) sort.addEventListener('change', apply);
+  }
+  if (document.readyState !== 'loading') init();
+  else document.addEventListener('DOMContentLoaded', init);
+})();
+</script>

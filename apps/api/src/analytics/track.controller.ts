@@ -13,7 +13,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AnalyticsService } from './analytics.service';
 
 const EVENTS = new Set([
-  'pageview', 'cta_click', 'outbound_click',
+  'pageview', 'search', 'cta_click', 'outbound_click',
   'push_prompt_shown', 'push_subscribed', 'lead_submit',
 ]);
 

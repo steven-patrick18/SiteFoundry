@@ -58,6 +58,13 @@ export class CreateSiteDto {
   @IsString() @MaxLength(500)
   destination_url!: string;
 
+  /** Extra store hostnames the compliance gate accepts for outbound offers. */
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Matches(DOMAIN_RE, { each: true, message: 'each allowed host must be a bare domain' })
+  extra_allowed_hosts?: string[];
+
   @IsObject()
   params!: Record<string, unknown>;
 
@@ -83,6 +90,12 @@ export class UpdateSiteDto {
   @IsString({ each: true })
   @Matches(DOMAIN_RE, { each: true })
   extra_domains?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Matches(DOMAIN_RE, { each: true })
+  extra_allowed_hosts?: string[];
 
   @IsOptional() @ValidateNested() @Type(() => TrackingDto)
   tracking?: TrackingDto;

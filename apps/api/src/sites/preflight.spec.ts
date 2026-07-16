@@ -112,6 +112,33 @@ describe('pre-flight validation (§8)', () => {
     expect(result.errors.some((e) => e.field === 'destination_url')).toBe(true);
   });
 
+  it('offers on non-allowed store hosts give field errors', () => {
+    const params = structuredClone(VALID_PARAMS);
+    (params.products[0] as any).offers = [
+      { store_name: 'MegaMart', price: '$10', target_url: 'https://megamart.example.net/p/1' },
+      { store_name: 'Sketchy', price: '$9', target_url: 'https://sketchy.example.org/p/1' },
+    ];
+    const blocked = runPreflight({ ...BASE, params });
+    expect(blocked.errors.some((e) => e.field === 'products[0].offers[0].target_url')).toBe(true);
+    expect(blocked.errors.some((e) => e.field === 'products[0].offers[1].target_url')).toBe(true);
+
+    // whitelisting the extra store host clears its error (§8 allowed destinations)
+    const allowed = runPreflight({
+      ...BASE, params, extraAllowedHosts: ['megamart.example.net'],
+    });
+    expect(allowed.errors.some((e) => e.field === 'products[0].offers[0].target_url')).toBe(false);
+    expect(allowed.errors.some((e) => e.field === 'products[0].offers[1].target_url')).toBe(true);
+  });
+
+  it('offers require a store name', () => {
+    const params = structuredClone(VALID_PARAMS);
+    (params.products[0] as any).offers = [
+      { price: '$10', target_url: 'https://store.example.com/p/1' },
+    ];
+    const result = runPreflight({ ...BASE, params });
+    expect(result.errors.some((e) => e.field === 'products[0].offers[0].store_name')).toBe(true);
+  });
+
   it('schema maxLength is enforced (SEO title 60)', () => {
     const params = structuredClone(VALID_PARAMS);
     params.seo.page_title = 'x'.repeat(75);

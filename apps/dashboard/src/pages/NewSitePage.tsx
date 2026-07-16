@@ -61,6 +61,7 @@ export default function NewSitePage() {
   const [domain, setDomain] = useState('');
   const [extraDomains, setExtraDomains] = useState('');
   const [destinationUrl, setDestinationUrl] = useState('');
+  const [extraAllowedHosts, setExtraAllowedHosts] = useState('');
   const [params, setParams] = useState<Record<string, any>>({});
   const [tracking, setTracking] = useState({
     ga4_id: '', meta_pixel_id: '', conversion_id: '', conversion_label: '',
@@ -144,6 +145,7 @@ export default function NewSitePage() {
         setName(site.name);
         setDomain(site.domain);
         setExtraDomains((site.extraDomains ?? []).join(', '));
+        setExtraAllowedHosts((site.extraAllowedHosts ?? []).join(', '));
         setDestinationUrl(site.destinationUrl);
         setParams(site.params ?? {});
         setTracking({
@@ -175,6 +177,10 @@ export default function NewSitePage() {
       template_id: templateId,
       domain: domain.trim().toLowerCase(),
       extra_domains: extraDomains
+        .split(',')
+        .map((d) => d.trim().toLowerCase())
+        .filter(Boolean),
+      extra_allowed_hosts: extraAllowedHosts
         .split(',')
         .map((d) => d.trim().toLowerCase())
         .filter(Boolean),
@@ -291,6 +297,14 @@ export default function NewSitePage() {
             <label>Primary domain *<input value={domain} onChange={(e) => setDomain(e.target.value)} placeholder="acrepairs-delhi.com" /></label>
             <label>Alias domains (comma-separated)<input value={extraDomains} onChange={(e) => setExtraDomains(e.target.value)} placeholder="www.acrepairs-delhi.com" /></label>
             <label>Destination store URL (HTTPS) *<input value={destinationUrl} onChange={(e) => setDestinationUrl(e.target.value)} placeholder="https://store.example.com" /></label>
+            <label>
+              Additional allowed store domains (for price-comparison offers)
+              <input
+                value={extraAllowedHosts}
+                onChange={(e) => setExtraAllowedHosts(e.target.value)}
+                placeholder="megamart.example.com, dealzone.example.com"
+              />
+            </label>
           </div>
         </div>
       )}

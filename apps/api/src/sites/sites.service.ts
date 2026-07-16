@@ -82,6 +82,7 @@ export class SitesService {
             templateVersion: template.version,
             domain: dto.domain.toLowerCase(),
             extraDomains: (dto.extra_domains ?? []).map((d) => d.toLowerCase()),
+            extraAllowedHosts: (dto.extra_allowed_hosts ?? []).map((d) => d.toLowerCase()),
             destinationUrl: dto.destination_url,
             params: dto.params as any,
             ...this.trackingColumns(dto.tracking),
@@ -118,6 +119,9 @@ export class SitesService {
           ...(dto.extra_domains !== undefined
             ? { extraDomains: dto.extra_domains.map((d) => d.toLowerCase()) }
             : {}),
+          ...(dto.extra_allowed_hosts !== undefined
+            ? { extraAllowedHosts: dto.extra_allowed_hosts.map((d) => d.toLowerCase()) }
+            : {}),
           ...(dto.ssl_auto_renew !== undefined ? { sslAutoRenew: dto.ssl_auto_renew } : {}),
           ...(dto.notes !== undefined ? { notes: dto.notes } : {}),
           ...this.trackingColumns(dto.tracking),
@@ -150,6 +154,7 @@ export class SitesService {
       destinationUrl: site.destinationUrl,
       templateCategory: site.template.category,
       paramSchema: site.template.paramSchema,
+      extraAllowedHosts: site.extraAllowedHosts,
     });
   }
 

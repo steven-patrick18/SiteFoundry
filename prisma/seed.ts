@@ -70,6 +70,23 @@ function baseParamSchema(opts: {
                   items: { type: 'string' },
                 },
                 target_url: { type: 'string', format: 'uri', title: 'Product link on store' },
+                offers: {
+                  type: 'array',
+                  title: 'Store offers (price comparison)',
+                  maxItems: 6,
+                  items: {
+                    type: 'object',
+                    required: ['store_name', 'price', 'target_url'],
+                    properties: {
+                      store_name: { type: 'string', title: 'Store' },
+                      price: { type: 'string', title: 'Price' },
+                      shipping_cost: { type: 'string', title: 'Shipping' },
+                      delivery_time: { type: 'string', title: 'Delivery estimate' },
+                      badge: { type: 'string', title: 'Badge' },
+                      target_url: { type: 'string', format: 'uri', title: 'Offer link (host must be an allowed store)' },
+                    },
+                  },
+                },
               },
             },
           },
