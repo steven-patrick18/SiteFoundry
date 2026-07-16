@@ -103,6 +103,16 @@ export class InstallController {
     return { ok: true, build_id: dto.build_id };
   }
 
+  /** §10 POST /sites/:id/renew-ssl — force certbot renewal now. */
+  @Post('sites/:id/renew-ssl')
+  async renewSsl(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    this.requireBuilder(user);
+    return this.installer.renewSsl(user.tenantId, id);
+  }
+
   @Get('sites/:id/builds')
   async builds(
     @CurrentUser() user: AuthUser,

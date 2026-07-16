@@ -8,16 +8,19 @@ campaign.
 
 Spec: `SiteFoundry Developer Build Doc v3 Final.docx` (v3.0, in repo root).
 Built milestone by milestone (§14 of the doc). **Current state: Milestones
-M1 + M2 + M3 complete** — credential vault (envelope encryption), multi-tenant
+M1 + M2 + M3 + M4 complete** — credential vault (envelope encryption), multi-tenant
 schema with Postgres RLS, JWT auth, server management (SSH test, facts probe,
 host-key pinning, streamed base provisioning), client CRUD, template library
 with a real buildable Astro stock template, schema-driven parameter forms,
 the pre-flight compliance gate (§8), and the full §9 install pipeline:
 Astro build → immutable artifact → SFTP deploy with atomic swap → nginx
 vhost → certbot SSL → tracking/claims verification → live, streamed over
-SSE with retry-from-step and sub-10s rollback. Real-hardware acceptance
-(deploy to an actual Ubuntu VPS) runs when the production server is bought.
-Next: M4 site record + first-party analytics.
+SSE with retry-from-step and sub-10s rollback. M4 adds the section-7 site record page,
+the real sf.js first-party beacon with /public/track (rate-limited,
+Origin-validated), monthly-partitioned visits, campaign-link generator with
+canonical UTMs, and the analytics funnel. Real-hardware acceptance (deploy
+to an actual Ubuntu VPS) runs when the production server is bought.
+Next: M5 PushVault + leads + SSL renewal alerts.
 
 ## Stack (fixed by spec §2)
 

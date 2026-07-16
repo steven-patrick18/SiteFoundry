@@ -15,6 +15,10 @@ async function bootstrap() {
   );
   app.enableShutdownHooks();
 
+  // sendBeacon posts text/plain (simple request, no CORS preflight) —
+  // parse the public tracking route as raw text; the controller JSON-parses.
+  app.use('/api/v1/public', express.text({ type: '*/*', limit: '10kb' }));
+
   // Template demo previews built by `pnpm previews` (see scripts/build-previews.ts)
   const previewsDir =
     process.env.PREVIEWS_DIR ?? join(resolve(process.cwd(), '..', '..'), '.local', 'previews');

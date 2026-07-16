@@ -461,6 +461,51 @@ export class InstallerService {
     }
   }
 
+  /** §7.2 "Force Renew Now" — certbot renew for this site's cert. */
+  async renewSsl(tenantId: string, siteId: string): Promise<{ ssl_expires_at: Date | null }> {
+    const site = await this.prisma.withTenant(tenantId, (tx) =>
+      tx.site.findFirst({
+        where: { id: siteId },
+        include: { server: { include: { credential: true } } },
+      }),
+    );
+    if (!site) throw new NotFoundException('Site not found');
+    const session = await this.openSession(site.server);
+    try {
+      const renew = await session.exec(
+        `sudo -n certbot renew --cert-name ${site.domain} --force-renewal --non-interactive`,
+        300_000,
+      );
+      if (renew.code !== 0) {
+        await this.prisma.withTenant(tenantId, (tx) =>
+          tx.site.update({ where: { id: siteId }, data: { sslStatus: 'renewal_failed' } }),
+        );
+        throw new Error(`certbot renew failed: ${outputTail(renew.stderr || renew.stdout)}`);
+      }
+      const expiry = await session.exec(
+        `sudo -n openssl x509 -enddate -noout -in /etc/letsencrypt/live/${site.domain}/cert.pem`,
+        30_000,
+      );
+      let expiresAt: Date | null = null;
+      const match = expiry.stdout.match(/notAfter=(.+)/);
+      if (match) {
+        const parsed = new Date(match[1].trim());
+        if (!Number.isNaN(parsed.getTime())) expiresAt = parsed;
+      }
+      await this.prisma.withTenant(tenantId, (tx) =>
+        tx.site.update({
+          where: { id: siteId },
+          data: { sslStatus: 'active', sslExpiresAt: expiresAt },
+        }),
+      );
+      await this.recordEvent(tenantId, siteId, site.serverId, 'renew_ssl', 'ok',
+        expiresAt ? `valid until ${expiresAt.toISOString()}` : 'renewed');
+      return { ssl_expires_at: expiresAt };
+    } finally {
+      session.close();
+    }
+  }
+
   // ── helpers ─────────────────────────────────────────────────────────────
 
   private async restoreLastBuild(ctx: InstallContext) {

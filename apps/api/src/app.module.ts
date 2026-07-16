@@ -12,6 +12,7 @@ import { ClientsModule } from './clients/clients.module';
 import { TemplatesModule } from './templates/templates.module';
 import { SitesModule } from './sites/sites.module';
 import { InstallerModule } from './installer/installer.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { InstallerModule } from './installer/installer.module';
     TemplatesModule,
     SitesModule,
     InstallerModule,
+    AnalyticsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

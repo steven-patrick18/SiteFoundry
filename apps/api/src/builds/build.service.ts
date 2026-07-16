@@ -47,6 +47,7 @@ export class BuildService {
   private readonly logger = new Logger(BuildService.name);
   private readonly workRoot: string;
   private readonly templatesDir: string;
+  private readonly panelPublicUrl: string;
 
   constructor(
     config: ConfigService,
@@ -55,6 +56,10 @@ export class BuildService {
     const repoRoot = resolve(process.cwd(), '..', '..');
     this.workRoot = config.get<string>('BUILD_WORK_DIR', join(repoRoot, '.local', 'builds'));
     this.templatesDir = config.get<string>('TEMPLATES_DIR', join(repoRoot, 'templates'));
+    // Public URL of this panel — deployed sites post beacon events here.
+    this.panelPublicUrl = (
+      config.get<string>('PANEL_PUBLIC_URL') ?? 'http://localhost:3000'
+    ).replace(/\/$/, '');
   }
 
   buildDir(buildId: string): string {
@@ -91,6 +96,7 @@ export class BuildService {
           category: input.category,
           destination_url: input.destinationUrl,
           site_key: input.siteId,
+          track_url: `${this.panelPublicUrl}/api/v1/public/track`,
           tracking: input.tracking,
         },
         null,

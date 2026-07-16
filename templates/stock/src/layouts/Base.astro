@@ -24,7 +24,13 @@ const fontStack = `${brand.font ?? 'Inter'}, system-ui, -apple-system, 'Segoe UI
     <link rel="canonical" href={`https://${site.domain}${Astro.url.pathname}`} />
 
     {/* ── First-party beacon (SiteFoundry sf.js) ── */}
-    <script src="/sf.js" data-site-key={site.site_key ?? site.domain} data-dest={site.destination_url} defer></script>
+    <script
+      src="/sf.js"
+      data-site-key={site.site_key ?? site.domain}
+      data-dest={site.destination_url}
+      data-track={site.track_url ?? ''}
+      defer
+    ></script>
 
     {/* ── Google Analytics 4 ── */}
     {t.ga4_id && (
