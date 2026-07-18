@@ -11,9 +11,24 @@ import {
   Req,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { IsObject, IsOptional, IsString } from 'class-validator';
 import { AuthUser, CurrentUser } from '../auth/current-user.decorator';
 import { Public } from '../auth/public.decorator';
 import { ContentService } from './content.service';
+
+// The global ValidationPipe (whitelist:true) strips any body property not on a
+// DTO class, so the public save must declare its shape here.
+class SaveContentDto {
+  @IsString()
+  site_key!: string;
+
+  @IsString()
+  edit_key!: string;
+
+  @IsOptional()
+  @IsObject()
+  edits?: Record<string, unknown>;
+}
 
 /** Sliding-window limiter: N saves/min per IP (protects the rebuild pipeline). */
 class IpRateLimiter {
@@ -71,21 +86,14 @@ export class ContentController {
   /** Public: inline-editor save from a deployed site (token-authed). */
   @Public()
   @Post('public/site-content')
-  async save(
-    @Req() req: Request,
-    @Body() body: { site_key?: string; edit_key?: string; edits?: unknown },
-  ) {
+  async save(@Req() req: Request, @Body() body: SaveContentDto) {
     if (!this.limiter.allow(req.ip ?? 'anon')) {
       return { ok: false, rate_limited: true };
     }
     if (!body?.site_key || !body?.edit_key) {
       throw new BadRequestException('site_key and edit_key are required');
     }
-    const result = await this.content.saveEdits(
-      String(body.site_key),
-      String(body.edit_key),
-      body.edits,
-    );
+    const result = await this.content.saveEdits(body.site_key, body.edit_key, body.edits);
     return { ok: true, ...result };
   }
 
