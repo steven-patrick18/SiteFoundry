@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  Body,
   Controller,
   Delete,
   ForbiddenException,
@@ -11,24 +10,9 @@ import {
   Req,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { IsObject, IsOptional, IsString } from 'class-validator';
 import { AuthUser, CurrentUser } from '../auth/current-user.decorator';
 import { Public } from '../auth/public.decorator';
 import { ContentService } from './content.service';
-
-// The global ValidationPipe (whitelist:true) strips any body property not on a
-// DTO class, so the public save must declare its shape here.
-class SaveContentDto {
-  @IsString()
-  site_key!: string;
-
-  @IsString()
-  edit_key!: string;
-
-  @IsOptional()
-  @IsObject()
-  edits?: Record<string, unknown>;
-}
 
 /** Sliding-window limiter: N saves/min per IP (protects the rebuild pipeline). */
 class IpRateLimiter {
@@ -86,15 +70,33 @@ export class ContentController {
   /** Public: inline-editor save from a deployed site (token-authed). */
   @Public()
   @Post('public/site-content')
-  async save(@Req() req: Request, @Body() body: SaveContentDto) {
+  async save(@Req() req: Request) {
     if (!this.limiter.allow(req.ip ?? 'anon')) {
       return { ok: false, rate_limited: true };
     }
-    if (!body?.site_key || !body?.edit_key) {
+    // Bodies under /api/v1/public are parsed as raw text (for sendBeacon) —
+    // JSON-parse it here, same as the other public endpoints.
+    const body = this.parseBody(req);
+    const siteKey = String(body.site_key ?? '');
+    const editKey = String(body.edit_key ?? '');
+    if (!siteKey || !editKey) {
       throw new BadRequestException('site_key and edit_key are required');
     }
-    const result = await this.content.saveEdits(body.site_key, body.edit_key, body.edits);
+    const result = await this.content.saveEdits(siteKey, editKey, body.edits);
     return { ok: true, ...result };
+  }
+
+  private parseBody(req: Request): any {
+    const raw = (req as any).body;
+    if (raw && typeof raw === 'object') return raw;
+    if (typeof raw === 'string' && raw.length) {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        throw new BadRequestException('Invalid JSON body');
+      }
+    }
+    return {};
   }
 
   private requireBuilder(user: AuthUser) {
