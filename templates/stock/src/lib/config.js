@@ -41,6 +41,18 @@ export function outbound(url) {
 }
 
 /**
+ * Fill an SEO pattern like "{name} Customer Service | {brand}" with per-page
+ * values. Unknown placeholders are dropped; extra spaces are collapsed so a
+ * blank value (e.g. no phone) never leaves ugly gaps.
+ */
+export function fillPattern(pattern, vars) {
+  return String(pattern || '')
+    .replace(/\{(\w+)\}/g, (_, key) => (vars[key] != null ? String(vars[key]) : ''))
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+/**
  * Base path prefix. Empty for real deployments (sites live at the domain
  * root); set via SF_BASE for panel demo previews served under a subpath.
  */

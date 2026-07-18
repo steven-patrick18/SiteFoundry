@@ -3,7 +3,7 @@ import Base from '../../layouts/Base.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
 import RetailerCard from '../../components/RetailerCard.astro';
 import TrustFooter from '../../components/TrustFooter.astro';
-import { params, site, href } from '../../lib/config.js';
+import { params, site, href, fillPattern } from '../../lib/config.js';
 import { retailers, retailerBySlug, relatedRetailers, slugify } from '../../lib/retailers.js';
 
 const telHref = (phone) => 'tel:' + String(phone || '').replace(/[^0-9+]/g, '');
@@ -19,11 +19,22 @@ const brand = params.brand ?? {};
 const related = relatedRetailers(r, 6);
 const catSlug = slugify(r.category);
 
-const title = `${r.name} Customer Service & Contact Info | ${brand.business_name}`;
+// SEO title/description: operator-defined pattern (per-site, applies to every
+// store page) with the built-in formula as the fallback. Per-store override
+// (r.seo_title / r.seo_description) wins if set.
+const seoVars = { name: r.name, brand: brand.business_name, category: r.category, phone: r.phone || '' };
+const titlePattern = (params.seo?.store_title_pattern ?? '').trim();
+const descPattern = (params.seo?.store_desc_pattern ?? '').trim();
+const title =
+  (r.seo_title ?? '').trim() ||
+  (titlePattern ? fillPattern(titlePattern, seoVars) : `${r.name} Customer Service & Contact Info | ${brand.business_name}`);
 const description =
-  `How to contact ${r.name}: customer service phone` +
-  (r.phone ? ` (${r.phone})` : '') +
-  `, hours, headquarters, help center and returns. ${r.tagline}`;
+  (r.seo_description ?? '').trim() ||
+  (descPattern
+    ? fillPattern(descPattern, seoVars)
+    : `How to contact ${r.name}: customer service phone` +
+      (r.phone ? ` (${r.phone})` : '') +
+      `, hours, headquarters, help center and returns. ${r.tagline}`);
 
 // Long-form, unique FAQ content per store (also emitted as JSON-LD).
 const faqs = [

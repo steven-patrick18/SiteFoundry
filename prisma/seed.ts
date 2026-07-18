@@ -28,6 +28,7 @@ function baseParamSchema(opts: {
   products?: boolean;
   leadForm?: boolean;
   requireDisclosure?: boolean;
+  seoPatterns?: boolean;
   defaults?: {
     headline?: string;
     subheadline?: string;
@@ -60,6 +61,32 @@ function baseParamSchema(opts: {
         page_title: { type: 'string', title: 'Page title', maxLength: 60 },
         meta_description: { type: 'string', title: 'Meta description', maxLength: 160 },
         og_image_url: { type: 'string', format: 'uri', title: 'OG image URL' },
+        // Multipage templates (e.g. the store directory) auto-generate a title
+        // + description for every sub-page from these patterns. Placeholders are
+        // filled per page; leave blank to use the built-in default.
+        ...(opts.seoPatterns
+          ? {
+              store_title_pattern: {
+                type: 'string',
+                title: 'Store page title pattern',
+                description: 'Placeholders: {name} {brand} {category} {phone}',
+                default: '{name} Customer Service Number & Hours | {brand}',
+              },
+              store_desc_pattern: {
+                type: 'string',
+                title: 'Store page meta description pattern',
+                description: 'Placeholders: {name} {brand} {category} {phone}',
+                default:
+                  'Contact {name}: customer service, hours, headquarters, returns and help. Compare on {brand}.',
+              },
+              category_title_pattern: {
+                type: 'string',
+                title: 'Category page title pattern',
+                description: 'Placeholders: {category} {brand} {count}',
+                default: '{category} Stores — Customer Service & Contact Info | {brand}',
+              },
+            }
+          : {}),
       },
     },
     hero: {
@@ -218,6 +245,7 @@ const STOCK_TEMPLATES = [
     description:
       'Content-rich directory of major US online retailers — a page per store with customer-service contact details, hours, headquarters, help links, FAQ, and SEO structured data. Built for high-volume informational keywords ("<store> customer service number", "how to contact <store>", "<store> returns").',
     paramSchema: baseParamSchema({
+      seoPatterns: true,
       defaults: {
         headline: 'US Online Store Directory — Contact & Customer Service Info',
         subheadline:

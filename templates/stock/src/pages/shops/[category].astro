@@ -3,7 +3,7 @@ import Base from '../../layouts/Base.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
 import RetailerCard from '../../components/RetailerCard.astro';
 import TrustFooter from '../../components/TrustFooter.astro';
-import { params, site, href } from '../../lib/config.js';
+import { params, site, href, fillPattern } from '../../lib/config.js';
 import { retailerCategories } from '../../lib/retailers.js';
 
 export function getStaticPaths() {
@@ -17,7 +17,11 @@ export function getStaticPaths() {
 const { category } = Astro.props;
 const brand = params.brand ?? {};
 const count = category.retailers.length;
-const title = `${category.name} Stores — Contact & Customer Service | ${brand.business_name}`;
+const catVars = { category: category.name, brand: brand.business_name, count };
+const catTitlePattern = (params.seo?.category_title_pattern ?? '').trim();
+const title = catTitlePattern
+  ? fillPattern(catTitlePattern, catVars)
+  : `${category.name} Stores — Contact & Customer Service | ${brand.business_name}`;
 const description = `Contact details, customer service numbers, and shopping info for ${count} top ${category.name.toLowerCase()} online stores in the US.`;
 
 const listLd = {
