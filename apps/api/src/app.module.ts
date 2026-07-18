@@ -44,6 +44,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     SslModule,
     AppConfigModule,
     SettingsModule,
+    ContentModule,
     ScheduleModule.forRoot(),
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
