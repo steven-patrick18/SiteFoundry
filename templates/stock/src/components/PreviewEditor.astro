@@ -1,14 +1,11 @@
 ---
-// WordPress-style inline content editor. Any element tagged [data-edit="param.path"]
-// becomes editable when the page is opened with ?edit=1 (and, for publishing, an
-// edit key from the panel). Mirrored spots [data-bind="name"] update live as their
-// source [data-edit ... data-mirror="name"] changes. "Publish" saves the changed
-// paths to the site's params via the panel and republishes the live site. Edits
-// also persist in localStorage so the editor keeps them across reloads. Invisible
-// to normal visitors (toolbar only appears with ?edit=1).
+// WordPress-style inline content editor. Elements tagged [data-edit="param.path"]
+// become editable ONLY when the page is opened with ?edit=1 AND a valid edit key
+// (delivered via #k=... from the panel's "Edit content" button). Normal visitors
+// — and anyone who merely appends ?edit=1 without the key — see nothing at all.
+// "Publish" saves the changed paths to the site's params and republishes.
 import { contentUrl, siteKey } from '../lib/config.js';
 ---
-<button type="button" id="sf-edit-enter" class="sf-edit-enter" hidden>✏️ Edit this page</button>
 <div id="sf-editbar" class="sf-editbar" data-content-url={contentUrl} data-site-key={siteKey} hidden>
   <span class="sf-editbar-title">✏️ Editing — click any highlighted text to change it.</span>
   <span id="sf-edit-status" class="sf-edit-status"></span>
@@ -30,6 +27,28 @@ import { contentUrl, siteKey } from '../lib/config.js';
     var LS_EDITS = 'sf-edits:' + SITE_KEY + ':' + location.pathname;
     var LS_KEY = 'sf-editkey:' + SITE_KEY;
 
+    // An edit key may arrive in the URL (#k=...) from the panel — capture it,
+    // stash it for this site, then clean it out of the address bar.
+    try {
+      var m = (location.hash || '').match(/[#&]k=([^&]+)/);
+      if (m) {
+        localStorage.setItem(LS_KEY, decodeURIComponent(m[1]));
+        history.replaceState(null, '', location.pathname + location.search);
+      }
+    } catch (e) {}
+
+    var wantEdit = false;
+    try { wantEdit = new URLSearchParams(location.search).get('edit') === '1'; } catch (e) {}
+    if (!wantEdit) return; // normal visitors: no editor UI, ever
+
+    var editKey = '';
+    try { editKey = localStorage.getItem(LS_KEY) || ''; } catch (e) {}
+    var isRealSite = !!(CONTENT_URL && SITE_KEY);
+    // On a live site, editing requires the key from the panel link. Without it
+    // (e.g. a visitor who guessed ?edit=1) show nothing. Internal previews have
+    // no content endpoint, so they open in demo mode (edit + Copy JSON only).
+    if (isRealSite && !editKey) return;
+
     function fields() { return [].slice.call(document.querySelectorAll('[data-edit]')); }
     function setStatus(msg, kind) {
       var s = document.getElementById('sf-edit-status');
@@ -44,7 +63,7 @@ import { contentUrl, siteKey } from '../lib/config.js';
       }
     }
 
-    // capture originals + apply any locally-saved edits
+    // capture originals + apply any locally-saved (mid-edit) changes
     var saved = {};
     try { saved = JSON.parse(localStorage.getItem(LS_EDITS) || '{}'); } catch (e) {}
     fields().forEach(function (el) {
@@ -67,29 +86,6 @@ import { contentUrl, siteKey } from '../lib/config.js';
       try { localStorage.setItem(LS_EDITS, JSON.stringify(changed())); } catch (e) {}
     }
 
-    // capture an edit key passed in the URL (#k=...) then clean the address bar
-    try {
-      var m = (location.hash || '').match(/[#&]k=([^&]+)/);
-      if (m) {
-        localStorage.setItem(LS_KEY, decodeURIComponent(m[1]));
-        history.replaceState(null, '', location.pathname + location.search);
-      }
-    } catch (e) {}
-
-    var wantEdit = false;
-    try { wantEdit = new URLSearchParams(location.search).get('edit') === '1'; } catch (e) {}
-    var enterBtn = document.getElementById('sf-edit-enter');
-    if (!wantEdit) {
-      if (enterBtn) {
-        enterBtn.hidden = false;
-        enterBtn.addEventListener('click', function () {
-          var u = new URL(location.href); u.searchParams.set('edit', '1'); location.href = u.toString();
-        });
-      }
-      return;
-    }
-    if (enterBtn) enterBtn.hidden = true;
-
     document.body.classList.add('sf-editing');
     bar.hidden = false;
     fields().forEach(function (el) {
@@ -99,15 +95,12 @@ import { contentUrl, siteKey } from '../lib/config.js';
       el.addEventListener('blur', persist);
     });
 
-    var editKey = '';
-    try { editKey = localStorage.getItem(LS_KEY) || ''; } catch (e) {}
     var canPublish = !!(CONTENT_URL && SITE_KEY && editKey);
-
     var publishBtn = document.getElementById('sf-edit-publish');
     if (publishBtn) {
       if (!canPublish) {
         publishBtn.disabled = true;
-        publishBtn.title = 'Open the edit link from your SiteFoundry panel to publish';
+        publishBtn.title = 'Open this page from your SiteFoundry panel to publish';
       }
       publishBtn.addEventListener('click', function () {
         persist();
@@ -123,18 +116,17 @@ import { contentUrl, siteKey } from '../lib/config.js';
           .then(function (r) { return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok, d: d }; }); })
           .then(function (res) {
             if (res.ok && res.d && res.d.ok) {
-              // saved edits are now the new baseline
               fields().forEach(function (el) { el.setAttribute('data-orig', el.textContent); });
               try { localStorage.removeItem(LS_EDITS); } catch (e) {}
               setStatus('Published! Your site updates in about a minute.', 'ok');
             } else if (res.d && res.d.rate_limited) {
               setStatus('Too many saves — wait a moment and try again.', 'err');
             } else {
-              setStatus('Publish failed. Check your edit link and try again.', 'err');
+              setStatus('Publish failed. Reopen this page from your panel and try again.', 'err');
             }
           })
           .catch(function () { setStatus('Publish failed — network error.', 'err'); })
-          .then(function () { publishBtn.disabled = !canPublish ? true : false; });
+          .then(function () { publishBtn.disabled = !canPublish; });
       });
     }
 
