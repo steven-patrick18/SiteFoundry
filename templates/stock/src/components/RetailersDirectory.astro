@@ -1,0 +1,136 @@
+---
+// Home directory for the US retailers template: hero, live filter box, and a
+// section per category with store cards. Content-heavy for SEO.
+import { params, href } from '../lib/config.js';
+import { retailers, retailerCategories } from '../lib/retailers.js';
+import RetailerCard from './RetailerCard.astro';
+
+const brand = params.brand ?? {};
+const hero = params.hero ?? {};
+const cats = retailerCategories();
+const total = retailers.length;
+const headline = hero.headline || `US Online Store Directory — Contact & Customer Service Info`;
+const sub =
+  hero.subheadline ||
+  `Phone numbers, hours, headquarters, help centers and shopping guides for ${total} of America's biggest online retailers — all in one place.`;
+---
+<section class="dir-hero">
+  <div class="wrap">
+    <a class="dir-brand" href={href('/')}>{brand.business_name}</a>
+    <h1>{headline}</h1>
+    <p class="dir-hero-sub">{sub}</p>
+    <div class="dir-search">
+      <input
+        id="rdir-search"
+        type="search"
+        placeholder="Search a store (Amazon, Walmart, Best Buy…)"
+        aria-label="Search stores"
+        autocomplete="off"
+      />
+    </div>
+    <div class="dir-chips" id="rdir-chips">
+      <button class="chip active" data-cat="all">All ({total})</button>
+      {cats.map((c) => (
+        <button class="chip" data-cat={c.name.toLowerCase()}>{c.name}</button>
+      ))}
+    </div>
+  </div>
+</section>
+
+<main class="wrap dir-main">
+  <p id="rdir-empty" class="dir-empty" hidden>No stores match your search.</p>
+
+  {cats.map((c) => (
+    <section class="dir-cat" data-cat-section={c.name.toLowerCase()}>
+      <div class="dir-cat-head">
+        <h2>{c.name}</h2>
+        <a class="dir-cat-all" href={href(`/shops/${c.slug}/`)}>View all {c.name} ›</a>
+      </div>
+      <div class="rgrid">
+        {c.retailers.map((r) => <RetailerCard retailer={r} />)}
+      </div>
+    </section>
+  ))}
+
+  <section class="dir-about prose">
+    <h2>About this US online store directory</h2>
+    <p>
+      Looking for a store's customer service number, return policy, or corporate
+      headquarters? This directory brings together contact and support details
+      for {total} of the largest online retailers in the United States — from
+      everything-stores like Amazon, Walmart, and Target to specialists such as
+      Best Buy, Chewy, Sephora, and The Home Depot. Each store has its own page
+      with a description of what it sells, its published customer-service phone
+      number and hours, its headquarters location, and a direct link to the
+      official website and help center.
+    </p>
+    <p>
+      We organize retailers by category — {cats.map((c) => c.name).join(', ')} —
+      so you can quickly find the right store for electronics, groceries, home
+      goods, fashion, beauty, pet supplies, office products, and more. Whether
+      you need to track an order, start a return, reach a live agent, or simply
+      compare where to shop, start with the store's page below.
+    </p>
+    <p class="dir-disclaimer">
+      <strong>Please note:</strong> contact details are publicly listed and can
+      change. Always confirm phone numbers, hours, and policies on the retailer's
+      official website before relying on them. This site is an independent
+      directory and is not affiliated with, endorsed by, or sponsored by the
+      retailers listed.
+    </p>
+  </section>
+</main>
+
+<script is:inline>
+(function () {
+  function init() {
+    var input = document.getElementById('rdir-search');
+    var chips = document.getElementById('rdir-chips');
+    var empty = document.getElementById('rdir-empty');
+    var cards = [].slice.call(document.querySelectorAll('.rcard'));
+    var sections = [].slice.call(document.querySelectorAll('[data-cat-section]'));
+    if (!input) return;
+    var activeCat = 'all';
+
+    function apply() {
+      var q = (input.value || '').trim().toLowerCase();
+      var shown = 0;
+      cards.forEach(function (c) {
+        var name = c.getAttribute('data-name') || '';
+        var cat = c.getAttribute('data-category') || '';
+        var okCat = activeCat === 'all' || cat === activeCat;
+        var okText = !q || name.indexOf(q) !== -1 || cat.indexOf(q) !== -1;
+        var show = okCat && okText;
+        c.style.display = show ? '' : 'none';
+        if (show) shown++;
+      });
+      // hide category sections with no visible cards
+      sections.forEach(function (s) {
+        var any = [].some.call(s.querySelectorAll('.rcard'), function (c) { return c.style.display !== 'none'; });
+        s.style.display = any ? '' : 'none';
+      });
+      if (empty) empty.hidden = shown !== 0;
+    }
+
+    input.addEventListener('input', apply);
+    if (chips) {
+      chips.addEventListener('click', function (e) {
+        var b = e.target.closest('.chip');
+        if (!b) return;
+        activeCat = b.getAttribute('data-cat');
+        [].forEach.call(chips.querySelectorAll('.chip'), function (c) {
+          c.classList.toggle('active', c === b);
+        });
+        apply();
+      });
+    }
+    // honor ?q= deep link from an inner-page header search
+    try {
+      var qp = new URLSearchParams(location.search).get('q');
+      if (qp) { input.value = qp; apply(); }
+    } catch (e) {}
+  }
+  if (document.readyState !== 'loading') init();
+  else document.addEventListener('DOMContentLoaded', init);
+})();
+</script>

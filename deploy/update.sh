@@ -26,6 +26,10 @@ pnpm -r build
 # build always reflects the just-pulled template code (never a stale cache).
 rm -rf templates/stock/.astro
 
+echo "-- regenerate template gallery previews + thumbnails"
+pnpm previews || echo "previews step failed (non-fatal)"
+rm -rf templates/stock/.astro
+
 # Restart out-of-band so this script (and the API responding to the update
 # request) can finish before the process is replaced.
 echo "-- scheduling restart"

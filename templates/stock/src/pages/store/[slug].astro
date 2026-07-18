@@ -1,0 +1,216 @@
+---
+import Base from '../../layouts/Base.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import TrustFooter from '../../components/TrustFooter.astro';
+import { params, site, href } from '../../lib/config.js';
+import { retailers, retailerBySlug, relatedRetailers, slugify } from '../../lib/retailers.js';
+
+// One page per retailer — but only for sites using the retailers template.
+export function getStaticPaths() {
+  if ((site.category ?? '') !== 'retailers') return [];
+  return retailers.map((retailer) => ({ params: { slug: retailer.slug }, props: { retailer } }));
+}
+
+const { retailer: r } = Astro.props;
+const brand = params.brand ?? {};
+const related = relatedRetailers(r, 6);
+const catSlug = slugify(r.category);
+
+const title = `${r.name} Customer Service & Contact Info | ${brand.business_name}`;
+const description =
+  `How to contact ${r.name}: customer service phone` +
+  (r.phone ? ` (${r.phone})` : '') +
+  `, hours, headquarters, help center and returns. ${r.tagline}`;
+
+// Long-form, unique FAQ content per store (also emitted as JSON-LD).
+const faqs = [
+  {
+    q: `What is the ${r.name} customer service phone number?`,
+    a: r.phone
+      ? `${r.name}'s publicly listed customer service line is ${r.phone}. Support hours are typically ${r.hours}. Always confirm the current number on the official website at ${r.url}, as published numbers can change.`
+      : `${r.name} does not publish a general customer service phone line. The fastest way to get help is through its online Help Center at ${r.url}, where you can start a chat, send a message, or contact a seller directly.`,
+  },
+  {
+    q: `How do I contact ${r.name} for help with an order?`,
+    a: `You can reach ${r.name} through its Help Center on ${r.url}${r.phone ? `, by phone at ${r.phone}` : ''}, and often via live chat or email. Have your order number ready so an agent can look up your purchase quickly.`,
+  },
+  {
+    q: `Where is ${r.name} headquartered?`,
+    a: `${r.name} is headquartered in ${r.hq}. It was founded in ${r.founded}. For corporate or media inquiries, use the contact information published on the company's official website.`,
+  },
+  {
+    q: `How do I return an item to ${r.name} or track my order?`,
+    a: `Sign in to your ${r.name} account on ${r.url} to view orders, print a return label, or track a shipment. Most major US retailers offer online returns by mail plus in-store or drop-off options; check the store's current return window and policy before you start.`,
+  },
+  {
+    q: `What does ${r.name} sell?`,
+    a: `${r.name} specializes in ${r.category.toLowerCase()} and carries ${r.sells.slice(0, -1).join(', ')}${r.sells.length > 1 ? ', and ' : ''}${r.sells[r.sells.length - 1]}. See the overview above for more about the store.`,
+  },
+];
+
+const orgLd = {
+  '@context': 'https://schema.org/',
+  '@type': 'Organization',
+  name: r.name,
+  url: r.url,
+  ...(r.phone
+    ? {
+        contactPoint: {
+          '@type': 'ContactPoint',
+          telephone: r.phone,
+          contactType: 'customer service',
+          areaServed: 'US',
+        },
+      }
+    : {}),
+  address: { '@type': 'PostalAddress', addressLocality: r.hq, addressCountry: 'US' },
+  foundingDate: String(r.founded),
+  description: r.tagline,
+};
+const faqLd = {
+  '@context': 'https://schema.org/',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.q,
+    acceptedAnswer: { '@type': 'Answer', text: f.a },
+  })),
+};
+const crumbLd = {
+  '@context': 'https://schema.org/',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: `https://${site.domain}${href('/')}` },
+    { '@type': 'ListItem', position: 2, name: r.category, item: `https://${site.domain}${href(`/shops/${catSlug}/`)}` },
+    { '@type': 'ListItem', position: 3, name: r.name },
+  ],
+};
+---
+<Base title={title} description={description}>
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(orgLd)} />
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(faqLd)} />
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(crumbLd)} />
+
+  <SiteHeader />
+
+  <main class="wrap store-page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href={href('/')}>Home</a>
+      <span class="sep">›</span>
+      <a href={href(`/shops/${catSlug}/`)}>{r.category}</a>
+      <span class="sep">›</span>
+      <span>{r.name}</span>
+    </nav>
+
+    <header class="store-hd">
+      <span class="store-logo" aria-hidden="true">{r.name.trim().charAt(0).toUpperCase()}</span>
+      <div>
+        <h1>{r.name} Customer Service &amp; Contact Information</h1>
+        <p class="store-tag">{r.tagline}</p>
+      </div>
+    </header>
+
+    <div class="store-cols">
+      <div class="store-main">
+        <section class="prose">
+          <h2>About {r.name}</h2>
+          <p>{r.description}</p>
+        </section>
+
+        <section class="prose">
+          <h2>How to contact {r.name}</h2>
+          <p>
+            There are several ways to reach {r.name}'s customer support team.
+            {r.phone
+              ? ` The quickest option for many shoppers is to call the customer service line at ${r.phone} during support hours (${r.hours}).`
+              : ` ${r.name} handles support online rather than by a public phone line, so the Help Center is the best starting point.`}
+            You can also visit the official website to use live chat, email or the
+            online help center, manage your account, and check order status.
+          </p>
+          <ul>
+            {r.phone && <li><strong>Phone:</strong> {r.phone} — {r.hours}</li>}
+            <li><strong>Online help center:</strong> available on the official website, {r.url}</li>
+            <li><strong>Account &amp; orders:</strong> sign in at {r.url} to track shipments, start returns, and view receipts</li>
+            <li><strong>Headquarters:</strong> {r.hq} (founded {r.founded})</li>
+          </ul>
+        </section>
+
+        <section class="prose">
+          <h2>Returns, shipping &amp; order tracking</h2>
+          <p>
+            To return an item or track an order from {r.name}, sign in to your
+            account on {r.url}. From your order history you can usually print a
+            prepaid return label, request a refund or exchange, and follow the
+            delivery status of any shipment. Return windows and shipping options
+            vary by item and season, so review the store's current policy on its
+            website before you buy. Many US retailers also accept in-store or
+            drop-off returns in addition to returns by mail.
+          </p>
+        </section>
+
+        <section class="prose">
+          <h2>What {r.name} sells</h2>
+          <p>{r.name} focuses on {r.category.toLowerCase()}, with popular categories including:</p>
+          <div class="store-tags">
+            {r.sells.map((s) => <span class="store-chip">{s}</span>)}
+          </div>
+        </section>
+
+        <section class="prose store-faq">
+          <h2>Frequently asked questions</h2>
+          {faqs.map((f) => (
+            <div>
+              <h3 class="faq-q">{f.q}</h3>
+              <p class="faq-a">{f.a}</p>
+            </div>
+          ))}
+        </section>
+
+        <p class="dir-disclaimer">
+          <strong>Disclaimer:</strong> {brand.business_name} is an independent
+          directory and is not affiliated with, endorsed by, or sponsored by
+          {' '}{r.name}. Contact details are publicly listed and may change —
+          always verify on the official website before relying on them.
+        </p>
+      </div>
+
+      <aside class="store-side">
+        <div class="store-card">
+          <h2 class="store-card-h">{r.name} at a glance</h2>
+          <dl class="store-facts">
+            {r.phone && <><dt>Customer service</dt><dd>{r.phone}</dd></>}
+            <dt>Support hours</dt><dd>{r.hours}</dd>
+            <dt>Category</dt><dd>{r.category}</dd>
+            <dt>Headquarters</dt><dd>{r.hq}</dd>
+            <dt>Founded</dt><dd>{r.founded}</dd>
+          </dl>
+          <a class="cta store-cta" href={r.url} data-outbound data-product={`${r.name} website`} rel="nofollow noopener" target="_blank">
+            Visit {r.name} Official Site →
+          </a>
+          <p class="store-note">Opens the retailer's official website in a new tab.</p>
+        </div>
+      </aside>
+    </div>
+
+    {related.length > 0 && (
+      <section class="store-related">
+        <h2>Other stores you might need</h2>
+        <div class="rgrid">
+          {related.map((rel) => (
+            <a class="rcard" href={href(`/store/${rel.slug}/`)}>
+              <span class="rcard-logo" aria-hidden="true">{rel.name.trim().charAt(0).toUpperCase()}</span>
+              <span class="rcard-body">
+                <span class="rcard-name">{rel.name}</span>
+                <span class="rcard-cat">{rel.category}</span>
+                <span class="rcard-tag">{rel.tagline}</span>
+                <span class="rcard-link">Contact &amp; info ›</span>
+              </span>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
+  </main>
+
+  <TrustFooter />
+</Base>

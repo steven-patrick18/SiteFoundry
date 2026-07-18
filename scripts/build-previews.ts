@@ -141,6 +141,12 @@ function demoParams(category: string) {
       cta_text: 'See the Deal',
       hero_image_url: photo('The Inverter Switch', 260, 300, '⚡'),
     },
+    retailers: {
+      headline: 'US Online Store Directory — Contact & Customer Service Info',
+      subheadline:
+        "Phone numbers, hours, headquarters, help centers and shopping guides for America's biggest online retailers.",
+      cta_text: 'Browse Stores',
+    },
   };
 
   return {
@@ -215,6 +221,7 @@ const CATEGORIES: Array<[string, string, number]> = [
   ['comparison', 'Comparison', 160],
   ['lead_page', 'Lead Page', 195],
   ['prelander', 'Prelander', 275],
+  ['retailers', 'US Store Directory', 210],
 ];
 
 for (const [category, label, hue] of CATEGORIES) {

@@ -1,0 +1,57 @@
+---
+import Base from '../../layouts/Base.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import RetailerCard from '../../components/RetailerCard.astro';
+import TrustFooter from '../../components/TrustFooter.astro';
+import { params, site, href } from '../../lib/config.js';
+import { retailerCategories } from '../../lib/retailers.js';
+
+export function getStaticPaths() {
+  if ((site.category ?? '') !== 'retailers') return [];
+  return retailerCategories().map((category) => ({
+    params: { category: category.slug },
+    props: { category },
+  }));
+}
+
+const { category } = Astro.props;
+const brand = params.brand ?? {};
+const count = category.retailers.length;
+const title = `${category.name} Stores — Contact & Customer Service | ${brand.business_name}`;
+const description = `Contact details, customer service numbers, and shopping info for ${count} top ${category.name.toLowerCase()} online stores in the US.`;
+
+const listLd = {
+  '@context': 'https://schema.org/',
+  '@type': 'ItemList',
+  name: `${category.name} online stores`,
+  numberOfItems: count,
+  itemListElement: category.retailers.map((r, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    url: `https://${site.domain}${href(`/store/${r.slug}/`)}`,
+    name: r.name,
+  })),
+};
+---
+<Base title={title} description={description}>
+  <script type="application/ld+json" slot="head" set:html={JSON.stringify(listLd)} />
+  <SiteHeader />
+  <main class="wrap cat-head">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href={href('/')}>Home</a>
+      <span class="sep">›</span>
+      <span>{category.name}</span>
+    </nav>
+    <h1>{category.name} Online Stores</h1>
+    <p class="cat-intro">
+      Customer service numbers, support hours, headquarters, and shopping guides
+      for {count} leading {category.name.toLowerCase()} retailers in the United
+      States. Tap any store for its full contact information and how-to-reach-them
+      details.
+    </p>
+    <div class="rgrid">
+      {category.retailers.map((r) => <RetailerCard retailer={r} />)}
+    </div>
+  </main>
+  <TrustFooter />
+</Base>

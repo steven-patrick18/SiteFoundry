@@ -9,11 +9,13 @@ import ProductsGrid from '../components/ProductsGrid.astro';
 import ComparisonTable from '../components/ComparisonTable.astro';
 import LeadForm from '../components/LeadForm.astro';
 import TrustFooter from '../components/TrustFooter.astro';
+import RetailersDirectory from '../components/RetailersDirectory.astro';
 import { params, site, href } from '../lib/config.js';
 import { catalogCategories, hasCatalog } from '../lib/catalog.js';
 import { marked } from 'marked';
 
 const category = site.category ?? 'ecom_showcase';
+const isRetailers = category === 'retailers';
 const disclosure = (params.legal?.affiliate_disclosure_md ?? '').trim();
 // Prelander/comparison show the disclosure prominently near the top (§8).
 const showTopDisclosure = disclosure && ['prelander', 'comparison'].includes(category);
@@ -26,6 +28,13 @@ const emptyHome = shopMode && !hasCatalog && products.length < 2;
 const hero = params.hero ?? {};
 ---
 <Base>
+  {isRetailers ? (
+    <>
+      <RetailersDirectory />
+      <ClaimsBar />
+    </>
+  ) : (
+  <>
   {shopMode ? (
     <>
       <ShopControls />
@@ -102,6 +111,8 @@ const hero = params.hero ?? {};
       </section>
     )}
   </main>
+  </>
+  )}
 
   <TrustFooter />
 </Base>

@@ -7,7 +7,9 @@ import { params, site, href } from '../../lib/config.js';
 import { catalogCategories } from '../../lib/catalog.js';
 
 // One static page per category (each distinct thing visitors have searched).
+// Only for shopping sites — other templates (e.g. retailers) skip these.
 export function getStaticPaths() {
+  if ((site.category ?? 'ecom_showcase') !== 'ecom_showcase') return [];
   return catalogCategories.map((category) => ({
     params: { slug: category.slug },
     props: { category },

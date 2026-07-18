@@ -6,6 +6,7 @@ export const TEMPLATE_CATEGORIES = [
   'comparison',
   'lead_page',
   'prelander',
+  'retailers',
 ] as const;
 
 export class CreateTemplateDto {

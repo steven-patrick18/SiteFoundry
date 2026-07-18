@@ -211,6 +211,21 @@ const STOCK_TEMPLATES = [
       },
     }),
   },
+  // ── informational / directory traffic (huge "contact / customer service" volume) ─
+  {
+    name: 'US Store Directory',
+    category: 'retailers',
+    description:
+      'Content-rich directory of major US online retailers — a page per store with customer-service contact details, hours, headquarters, help links, FAQ, and SEO structured data. Built for high-volume informational keywords ("<store> customer service number", "how to contact <store>", "<store> returns").',
+    paramSchema: baseParamSchema({
+      defaults: {
+        headline: 'US Online Store Directory — Contact & Customer Service Info',
+        subheadline:
+          "Phone numbers, hours, headquarters, help centers and shopping guides for America's biggest online retailers.",
+        cta: 'Browse Stores',
+      },
+    }),
+  },
   // ── affiliate / review traffic ─────────────────────────────────────────
   {
     name: 'Comparison Page',
