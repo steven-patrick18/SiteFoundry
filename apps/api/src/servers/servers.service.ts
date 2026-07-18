@@ -227,6 +227,58 @@ export class ServersService {
     return view;
   }
 
+  /**
+   * Re-pin the host key after a legitimate change (e.g. the server rebooted and
+   * now presents a different host-key type). We connect while ignoring the old
+   * pin, but only accept — and store — the new key if the saved credential
+   * still AUTHENTICATES. Successful auth proves it's the same server, so this
+   * is a safe recovery that never blindly trusts a new key.
+   */
+  async repinHostKey(user: AuthUser, id: string): Promise<ServerView> {
+    const server = await this.prisma.withTenant(user.tenantId, (tx) =>
+      tx.server.findFirst({ where: { id }, include: { credential: true } }),
+    );
+    if (!server) throw new NotFoundException('Server not found');
+
+    let session: SshSession;
+    try {
+      session = await this.openSession(server, { ignorePin: true });
+    } catch (err: any) {
+      // auth (or reachability) failed — do NOT re-pin
+      throw new BadRequestException(
+        `Could not re-pin: ${this.friendlySshError(err)}`,
+      );
+    }
+    const newHostKey = session.hostKey;
+    let facts: unknown = server.facts;
+    try {
+      facts = { ...(await probeFacts(session)) };
+    } catch {
+      /* facts refresh best-effort */
+    } finally {
+      session.close();
+    }
+
+    const updated = await this.prisma.withTenant(user.tenantId, async (tx) => {
+      const row = await tx.server.update({
+        where: { id },
+        data: {
+          hostKey: newHostKey,
+          status: server.baseProvisioned ? 'ready' : 'connected',
+          facts: facts as any,
+          lastCheckedAt: new Date(),
+        },
+        include: { credential: { select: { fingerprint: true } } },
+      });
+      await this.audit(tx, user, 'server.repin_host_key', 'server', id, null, {
+        old_host_key: server.hostKey,
+        new_host_key: newHostKey,
+      });
+      return row;
+    });
+    return this.toView(updated);
+  }
+
   // ── Credential rotation ───────────────────────────────────────────────
 
   async rotateCredential(
@@ -366,19 +418,22 @@ export class ServersService {
 
   // ── helpers ───────────────────────────────────────────────────────────
 
-  private async openSession(server: {
-    host: string;
-    port: number;
-    sshUsername: string;
-    authType: string;
-    hostKey: string | null;
-    credential: {
-      ciphertext: Buffer | Uint8Array;
-      dekWrapped: Buffer | Uint8Array;
-      iv: Buffer | Uint8Array;
-      authTag: Buffer | Uint8Array;
-    };
-  }): Promise<SshSession> {
+  private async openSession(
+    server: {
+      host: string;
+      port: number;
+      sshUsername: string;
+      authType: string;
+      hostKey: string | null;
+      credential: {
+        ciphertext: Buffer | Uint8Array;
+        dekWrapped: Buffer | Uint8Array;
+        iv: Buffer | Uint8Array;
+        authTag: Buffer | Uint8Array;
+      };
+    },
+    opts: { ignorePin?: boolean } = {},
+  ): Promise<SshSession> {
     const plaintext = await this.vault.decrypt({
       ciphertext: Buffer.from(server.credential.ciphertext),
       dekWrapped: Buffer.from(server.credential.dekWrapped),
@@ -387,7 +442,7 @@ export class ServersService {
     });
     try {
       return await this.ssh.connect(
-        { host: server.host, port: server.port, pinnedHostKey: server.hostKey },
+        { host: server.host, port: server.port, pinnedHostKey: opts.ignorePin ? null : server.hostKey },
         {
           username: server.sshUsername,
           ...(server.authType === 'ssh_key'

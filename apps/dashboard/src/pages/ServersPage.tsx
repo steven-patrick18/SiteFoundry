@@ -78,6 +78,19 @@ export default function ServersPage() {
     }
   }
 
+  async function repinHostKey(id: string) {
+    setBusyId(id);
+    setError(null);
+    try {
+      await api(`/servers/${id}/repin-host-key`, { method: 'POST' });
+      await reload();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function provisionBase(id: string) {
     setBusyId(id);
     setError(null);
@@ -188,6 +201,15 @@ export default function ServersPage() {
                   >
                     {busyId === s.id ? '…' : 'Test'}
                   </button>
+                  {s.status === 'error' && (
+                    <button
+                      disabled={busyId === s.id}
+                      title="The server's SSH host key changed (e.g. after a reboot). Re-pin it if this server is expected — only works if the saved credential still authenticates."
+                      onClick={() => repinHostKey(s.id)}
+                    >
+                      Re-pin host key
+                    </button>
+                  )}
                   {!s.baseProvisioned && (
                     <button
                       disabled={busyId === s.id || s.status === 'unreachable'}

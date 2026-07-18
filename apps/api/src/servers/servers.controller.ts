@@ -65,6 +65,16 @@ export class ServersController {
     return this.servers.testConnection(user, id);
   }
 
+  /** Re-pin the host key after a legitimate change (only if auth still works). */
+  @Post(':id/repin-host-key')
+  repinHostKey(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    this.requireBuilder(user);
+    return this.servers.repinHostKey(user, id);
+  }
+
   @Post(':id/rotate-credential')
   rotate(
     @CurrentUser() user: AuthUser,
