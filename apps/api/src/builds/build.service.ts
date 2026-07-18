@@ -102,6 +102,7 @@ export class BuildService {
           site_key: input.siteId,
           track_url: `${this.panelPublicUrl}/api/v1/public/track`,
           search_url: `${this.panelPublicUrl}/api/v1/public/search`,
+          content_url: `${this.panelPublicUrl}/api/v1/public/site-content`,
           pushvault_cdn: this.pushvaultCdn,
           tracking: input.tracking,
         },

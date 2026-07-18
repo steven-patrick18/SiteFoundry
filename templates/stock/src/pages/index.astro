@@ -41,9 +41,12 @@ const hero = params.hero ?? {};
       {(hero.headline || hero.cta_text) && (
         <div class="promo-strip">
           <div class="wrap promo-row">
-            <span><strong>{hero.headline}</strong>{hero.subheadline ? ` — ${hero.subheadline}` : ''}</span>
+            <span>
+              <strong data-edit="hero.headline">{hero.headline}</strong>
+              {hero.subheadline && <> — <span data-edit="hero.subheadline">{hero.subheadline}</span></>}
+            </span>
             {hero.cta_text && (
-              <a class="promo-cta" href={site.destination_url} data-outbound rel="nofollow sponsored">{hero.cta_text}</a>
+              <a class="promo-cta" href={site.destination_url} data-outbound rel="nofollow sponsored" data-edit="hero.cta_text">{hero.cta_text}</a>
             )}
           </div>
         </div>

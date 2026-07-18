@@ -8,7 +8,7 @@ const claims = Array.isArray(params.ad_claims) ? params.ad_claims : [];
   <section class="claims" id="claims">
     <div class="wrap">
       <ul>
-        {claims.map((claim) => <li>{claim}</li>)}
+        {claims.map((claim, i) => <li data-edit={`ad_claims.${i}`}>{claim}</li>)}
       </ul>
     </div>
   </section>

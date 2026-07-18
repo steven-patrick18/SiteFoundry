@@ -192,6 +192,9 @@ model Site {
   // install state machine (driven in M3)
   installStatus   String    @default("draft") @map("install_status")
   leadWebhookUrl  String?   @map("lead_webhook_url")
+  // per-site secret that authorizes client self-service content editing
+  // (inline editor -> POST /public/site-content). Null = editing disabled.
+  contentEditKey  String?   @map("content_edit_key")
   // SSL
   sslStatus       String    @default("none") @map("ssl_status")
   sslExpiresAt    DateTime? @map("ssl_expires_at") @db.Timestamptz()

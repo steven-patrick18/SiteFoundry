@@ -18,6 +18,7 @@ import { LeadsModule } from './leads/leads.module';
 import { SslModule } from './ssl/ssl.module';
 import { SettingsModule } from './settings/settings.module';
 import { AppConfigModule } from './settings/app-config.module';
+import { ContentModule } from './content/content.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({

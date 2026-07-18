@@ -2,7 +2,6 @@
 import Base from '../../layouts/Base.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
 import TrustFooter from '../../components/TrustFooter.astro';
-import PreviewEditor from '../../components/PreviewEditor.astro';
 import { params, site, href } from '../../lib/config.js';
 import { retailers, retailerBySlug, relatedRetailers, slugify } from '../../lib/retailers.js';
 
@@ -131,7 +130,7 @@ const crumbLd = {
       <span class="store-logo" aria-hidden="true">{r.name.trim().charAt(0).toUpperCase()}</span>
       <div>
         <h1>{r.name} Customer Service &amp; Contact Information</h1>
-        <p class="store-tag" data-rfield="tagline">{r.tagline}</p>
+        <p class="store-tag" data-edit={`retailers.${r.slug}.tagline`}>{r.tagline}</p>
       </div>
     </header>
 
@@ -139,7 +138,7 @@ const crumbLd = {
       <div class="store-main">
         <section class="prose">
           <h2>About {r.name}</h2>
-          <p data-rfield="description">{r.description}</p>
+          <p data-edit={`retailers.${r.slug}.description`}>{r.description}</p>
         </section>
 
         <section class="prose">
@@ -205,11 +204,11 @@ const crumbLd = {
         <div class="store-card">
           <h2 class="store-card-h">{r.name} at a glance</h2>
           <dl class="store-facts">
-            {r.phone && <><dt>Customer service</dt><dd data-rfield="phone">{r.phone}</dd></>}
-            <dt>Support hours</dt><dd data-rfield="hours">{r.hours}</dd>
-            <dt>Category</dt><dd data-rfield="category">{r.category}</dd>
-            <dt>Headquarters</dt><dd data-rfield="hq">{r.hq}</dd>
-            <dt>Founded</dt><dd data-rfield="founded">{r.founded}</dd>
+            {r.phone && <><dt>Customer service</dt><dd data-edit={`retailers.${r.slug}.phone`} data-mirror="phone">{r.phone}</dd></>}
+            <dt>Support hours</dt><dd data-edit={`retailers.${r.slug}.hours`} data-mirror="hours">{r.hours}</dd>
+            <dt>Category</dt><dd data-edit={`retailers.${r.slug}.category`}>{r.category}</dd>
+            <dt>Headquarters</dt><dd data-edit={`retailers.${r.slug}.hq`}>{r.hq}</dd>
+            <dt>Founded</dt><dd data-edit={`retailers.${r.slug}.founded`}>{r.founded}</dd>
           </dl>
           <a class="cta store-cta" href={r.url} data-outbound data-product={`${r.name} website`} rel="nofollow noopener" target="_blank">
             Visit {r.name} Official Site →
@@ -239,6 +238,5 @@ const crumbLd = {
     )}
   </main>
 
-  <PreviewEditor slug={r.slug} />
   <TrustFooter />
 </Base>

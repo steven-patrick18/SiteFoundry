@@ -2,6 +2,7 @@
 // Base layout: SEO head, tracking injection, brand CSS vars, sf.js beacon.
 // No blocking pop-ups/gates ever (protects ad account health — spec §1).
 import { params, site, href } from '../lib/config.js';
+import PreviewEditor from '../components/PreviewEditor.astro';
 
 const { title, description } = Astro.props;
 const brand = params.brand ?? {};
@@ -68,6 +69,7 @@ const fontStack = `${brand.font ?? 'Inter'}, system-ui, -apple-system, 'Segoe UI
   </head>
   <body>
     <slot />
+    <PreviewEditor />
     <style is:global define:vars={{ primary: brand.primary_color ?? '#4f46e5', secondary: brand.secondary_color ?? '#22c55e', fontStack }}>
       * { box-sizing: border-box; margin: 0; }
       body { font-family: var(--fontStack); color: #111827; background: #fff; line-height: 1.55; }
@@ -211,13 +213,17 @@ const fontStack = `${brand.font ?? 'Inter'}, system-ui, -apple-system, 'Segoe UI
       .sf-edit-enter { position: fixed; right: 16px; bottom: 16px; z-index: 60; background: #202124; color: #fff; border: 0; border-radius: 999px; padding: 10px 18px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
       .sf-editbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; background: #202124; color: #fff; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; flex-wrap: wrap; box-shadow: 0 -4px 16px rgba(0,0,0,.25); }
       .sf-editbar-title { font-size: 14px; }
+      .sf-edit-status { font-size: 13px; color: #9aa0a6; margin-left: auto; }
+      .sf-edit-status.ok { color: #81c995; }
+      .sf-edit-status.err { color: #f28b82; }
       .sf-editbar-actions { display: flex; gap: 8px; }
       .sf-editbar button { background: #3c4043; color: #fff; border: 1px solid #5f6368; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
-      .sf-editbar #sf-edit-export { background: var(--secondary); border-color: var(--secondary); color: #06280f; }
+      .sf-editbar button:disabled { opacity: .5; cursor: not-allowed; }
+      .sf-editbar #sf-edit-publish { background: var(--secondary); border-color: var(--secondary); color: #06280f; }
       body.sf-editing { padding-bottom: 64px; }
-      body.sf-editing [data-rfield] { outline: 2px dashed color-mix(in srgb, var(--primary) 60%, #fff); outline-offset: 3px; border-radius: 3px; cursor: text; transition: background .1s; }
-      body.sf-editing [data-rfield]:hover { background: color-mix(in srgb, var(--primary) 8%, #fff); }
-      body.sf-editing [data-rfield]:focus { outline: 2px solid var(--primary); background: #fff; }
+      body.sf-editing [data-edit] { outline: 2px dashed color-mix(in srgb, var(--primary) 60%, #fff); outline-offset: 3px; border-radius: 3px; cursor: text; transition: background .1s; }
+      body.sf-editing [data-edit]:hover { background: color-mix(in srgb, var(--primary) 8%, #fff); }
+      body.sf-editing [data-edit]:focus { outline: 2px solid var(--primary); background: #fff; }
       .chips { display: flex; gap: 8px; overflow-x: auto; padding-top: 2px; padding-bottom: 10px; scrollbar-width: none; }
       .chips::-webkit-scrollbar { display: none; }
       .chip { flex-shrink: 0; border: 1px solid #dadce0; background: #fff; color: #3c4043; font-size: 13px; padding: 6px 14px; border-radius: 999px; cursor: pointer; }

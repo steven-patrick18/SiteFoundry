@@ -122,6 +122,19 @@ export default function SiteRecordPage() {
     finally { setBusy(null); await reload(); }
   }
 
+  async function openInlineEditor() {
+    if (!site) return;
+    try {
+      const { edit_key } = await api<{ edit_key: string }>(
+        `/sites/${site.id}/content-key/ensure`,
+        { method: 'POST' },
+      );
+      window.open(`https://${site.domain}/?edit=1#k=${encodeURIComponent(edit_key)}`, '_blank', 'noopener');
+    } catch (err: any) {
+      setError(err.message);
+    }
+  }
+
   if (!site) return <p className="placeholder">{error ?? 'Loading…'}</p>;
 
   const maxFunnel = Math.max(1, ...funnel.map((s) => s.count));
@@ -139,8 +152,13 @@ export default function SiteRecordPage() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
+          {isLive && (
+            <button onClick={() => void openInlineEditor()} title="Edit page content live in your browser">
+              ✏️ Edit live content
+            </button>
+          )}
           <button onClick={() => navigate(`/sites/new?site=${site.id}`)}>
-            {site.status === 'draft' ? 'Open wizard' : 'Edit content & products'}
+            {site.status === 'draft' ? 'Open wizard' : 'Edit setup & products'}
           </button>
           <button onClick={() => navigate('/sites')}>All sites</button>
         </div>

@@ -16,9 +16,9 @@ const sub =
 ---
 <section class="dir-hero">
   <div class="wrap">
-    <a class="dir-brand" href={href('/')}>{brand.business_name}</a>
-    <h1>{headline}</h1>
-    <p class="dir-hero-sub">{sub}</p>
+    <a class="dir-brand" href={href('/')} data-edit="brand.business_name">{brand.business_name}</a>
+    <h1 data-edit="hero.headline">{headline}</h1>
+    <p class="dir-hero-sub" data-edit="hero.subheadline">{sub}</p>
     <div class="dir-search">
       <input
         id="rdir-search"

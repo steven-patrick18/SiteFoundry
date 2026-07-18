@@ -29,6 +29,12 @@ export const site = readJson('SF_SITE_PATH', {
 /** Panel endpoint for live visitor product search (empty = disabled). */
 export const searchUrl = site.search_url ?? '';
 
+/** Panel endpoint for the inline content editor to publish edits (empty = disabled). */
+export const contentUrl = site.content_url ?? '';
+
+/** Public site key (== site id) the content editor sends when publishing. */
+export const siteKey = site.site_key ?? site.domain ?? '';
+
 /** Outbound href to the destination store (UTM passthrough handled by sf.js). */
 export function outbound(url) {
   return url || site.destination_url;

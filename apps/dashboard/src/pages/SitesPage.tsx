@@ -59,6 +59,21 @@ export default function SitesPage() {
     void reload();
   }, [reload]);
 
+  // Launch the WordPress-style inline editor on the live site: mint (or reuse)
+  // the site's content-edit key, then open the site with ?edit=1#k=<key>.
+  const openInlineEditor = useCallback(async (s: SiteRow) => {
+    try {
+      const { edit_key } = await api<{ edit_key: string }>(
+        `/sites/${s.id}/content-key/ensure`,
+        { method: 'POST' },
+      );
+      const url = `https://${s.domain}/?edit=1#k=${encodeURIComponent(edit_key)}`;
+      window.open(url, '_blank', 'noopener');
+    } catch (err: any) {
+      setError(err.message);
+    }
+  }, []);
+
   return (
     <>
       <div className="page-head">
@@ -116,9 +131,11 @@ export default function SitesPage() {
                 <td className="sub">{s.sslStatus}</td>
                 <td className="actions">
                   <button onClick={() => navigate(`/sites/${s.id}`)}>Open record</button>
-                  <button onClick={() => navigate(`/sites/new?site=${s.id}`)}>
-                    {s.status === 'draft' ? 'Edit draft' : 'Edit content'}
-                  </button>
+                  {s.status === 'draft' ? (
+                    <button onClick={() => navigate(`/sites/new?site=${s.id}`)}>Edit draft</button>
+                  ) : (
+                    <button onClick={() => void openInlineEditor(s)}>Edit content</button>
+                  )}
                   <button onClick={() => setBuildsFor(s)}>Builds</button>
                 </td>
               </tr>
