@@ -18,6 +18,21 @@ export function slugify(s) {
     .slice(0, 60);
 }
 
+/** Bare domain from a store URL (used to fetch the brand logo). */
+export function domainOf(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '').toLowerCase();
+  } catch {
+    return '';
+  }
+}
+
+/** Brand logo URL for a domain (Google's favicon service — reliable, global;
+ *  the card/store markup falls back to a letter avatar if it ever fails). */
+export function logoFor(domain) {
+  return domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : '';
+}
+
 const RAW = [
   {
     name: 'Amazon',
@@ -490,10 +505,13 @@ const overrides =
 export const retailers = RAW.map((r) => {
   const slug = slugify(r.name);
   const ov = overrides[slug] && typeof overrides[slug] === 'object' ? overrides[slug] : {};
+  const domain = domainOf(ov.url || r.url);
   return {
     ...r,
     ...ov,
     slug,
+    domain,
+    logo: ov.logo || logoFor(domain),
     // keep arrays sane if an override sends a string or omits them
     sells: Array.isArray(ov.sells) ? ov.sells : r.sells,
     founded: ov.founded != null ? ov.founded : r.founded,

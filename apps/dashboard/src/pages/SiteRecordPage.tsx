@@ -75,6 +75,8 @@ export default function SiteRecordPage() {
   const [stream, setStream] = useState<StreamEvent[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [campaignFilter, setCampaignFilter] = useState('');
+  const [editKey, setEditKey] = useState<{ enabled: boolean; edit_key: string | null } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const reload = useCallback(async () => {
     if (!id) return;
@@ -94,6 +96,45 @@ export default function SiteRecordPage() {
   }, [id, campaignFilter]);
 
   useEffect(() => { void reload(); }, [reload]);
+
+  // Content-editing key status (for the "Client editing" card).
+  const loadEditKey = useCallback(async () => {
+    if (!id) return;
+    try {
+      setEditKey(await api<{ enabled: boolean; edit_key: string | null }>(`/sites/${id}/content-key`));
+    } catch { /* ignore */ }
+  }, [id]);
+  useEffect(() => { void loadEditKey(); }, [loadEditKey]);
+
+  const editLink = (key: string) => `https://${site?.domain}/?edit=1#k=${encodeURIComponent(key)}`;
+
+  async function enableEditing() {
+    await action('enable-editing', async () => {
+      const r = await api<{ enabled: boolean; edit_key: string }>(`/sites/${id}/content-key`, { method: 'POST' });
+      setEditKey(r);
+      setNotice('Client editing enabled — copy the edit link below and share it, or use "Edit live content".');
+    });
+  }
+  async function rotateEditing() {
+    if (!window.confirm('Generate a new key? The old edit link will stop working.')) return;
+    await action('rotate-editing', async () => {
+      const r = await api<{ enabled: boolean; edit_key: string }>(`/sites/${id}/content-key`, { method: 'POST' });
+      setEditKey(r);
+    });
+  }
+  async function disableEditing() {
+    if (!window.confirm('Disable client editing? Existing edit links will stop working.')) return;
+    await action('disable-editing', async () => {
+      await api(`/sites/${id}/content-key`, { method: 'DELETE' });
+      setEditKey({ enabled: false, edit_key: null });
+    });
+  }
+  function copyEditLink() {
+    if (!editKey?.edit_key) return;
+    void navigator.clipboard.writeText(editLink(editKey.edit_key));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  }
 
   async function action(label: string, fn: () => Promise<unknown>) {
     setBusy(label); setError(null); setNotice(null);
@@ -275,6 +316,44 @@ export default function SiteRecordPage() {
             ))}
             {builds.length === 0 && <p className="sub">No builds yet.</p>}
           </div>
+        </section>
+
+        {/* ── Client editing (inline editor key) ── */}
+        <section className="card">
+          <h2>Client editing</h2>
+          <p className="sub" style={{ marginBottom: 12 }}>
+            Let the client (or you) edit this site's content in the browser and publish
+            live — no code. Share the edit link below, or use <strong>Edit live content</strong> at the top.
+          </p>
+          {editKey?.enabled && editKey.edit_key ? (
+            <>
+              <label className="field-label">Edit link (opens the site in edit mode)</label>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input
+                  readOnly
+                  value={editLink(editKey.edit_key)}
+                  onFocus={(e) => e.currentTarget.select()}
+                  style={{ flex: 1, fontFamily: 'monospace', fontSize: 12 }}
+                />
+                <button onClick={copyEditLink}>{copied ? 'Copied!' : 'Copy link'}</button>
+              </div>
+              <p className="sub" style={{ marginTop: 6 }}>
+                Anyone with this link can edit and publish content on this site. Keep it private;
+                rotate it to revoke access.
+              </p>
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <button disabled={busy !== null} onClick={() => window.open(editLink(editKey.edit_key!), '_blank', 'noopener')}>
+                  Open editor
+                </button>
+                <button disabled={busy !== null} onClick={() => void rotateEditing()}>Rotate key</button>
+                <button className="danger" disabled={busy !== null} onClick={() => void disableEditing()}>Disable</button>
+              </div>
+            </>
+          ) : (
+            <button disabled={busy !== null} onClick={() => void enableEditing()}>
+              Enable client editing
+            </button>
+          )}
         </section>
 
         {/* ── 7.6 Tracking & Integrations ── */}

@@ -11,7 +11,10 @@ const initial = (r.name || '?').trim().charAt(0).toUpperCase();
   data-name={r.name.toLowerCase()}
   data-category={r.category.toLowerCase()}
 >
-  <span class="rcard-logo" aria-hidden="true">{initial}</span>
+  <span class="rcard-logo" aria-hidden="true">
+    {r.logo && <img src={r.logo} alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" />}
+    <span class="rcard-logo-txt">{initial}</span>
+  </span>
   <span class="rcard-body">
     <span class="rcard-name">{r.name}</span>
     <span class="rcard-cat">{r.category}</span>

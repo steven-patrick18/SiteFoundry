@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
+import RetailerCard from '../../components/RetailerCard.astro';
 import TrustFooter from '../../components/TrustFooter.astro';
 import { params, site, href } from '../../lib/config.js';
 import { retailers, retailerBySlug, relatedRetailers, slugify } from '../../lib/retailers.js';
@@ -127,7 +128,10 @@ const crumbLd = {
     </nav>
 
     <header class="store-hd">
-      <span class="store-logo" aria-hidden="true">{r.name.trim().charAt(0).toUpperCase()}</span>
+      <span class="store-logo" aria-hidden="true">
+        {r.logo && <img src={r.logo} alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" />}
+        <span class="store-logo-txt">{r.name.trim().charAt(0).toUpperCase()}</span>
+      </span>
       <div>
         <h1>{r.name} Customer Service &amp; Contact Information</h1>
         <p class="store-tag" data-edit={`retailers.${r.slug}.tagline`}>{r.tagline}</p>
@@ -222,17 +226,7 @@ const crumbLd = {
       <section class="store-related">
         <h2>Other stores you might need</h2>
         <div class="rgrid">
-          {related.map((rel) => (
-            <a class="rcard" href={href(`/store/${rel.slug}/`)}>
-              <span class="rcard-logo" aria-hidden="true">{rel.name.trim().charAt(0).toUpperCase()}</span>
-              <span class="rcard-body">
-                <span class="rcard-name">{rel.name}</span>
-                <span class="rcard-cat">{rel.category}</span>
-                <span class="rcard-tag">{rel.tagline}</span>
-                <span class="rcard-link">Contact &amp; info ›</span>
-              </span>
-            </a>
-          ))}
+          {related.map((rel) => <RetailerCard retailer={rel} />)}
         </div>
       </section>
     )}
