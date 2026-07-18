@@ -476,10 +476,29 @@ const RAW = [
   },
 ];
 
-// Deduped, slugged, sorted for stable output.
-export const retailers = RAW.map((r) => ({ ...r, slug: slugify(r.name) })).sort((a, b) =>
-  a.name.localeCompare(b.name),
-);
+// Per-site content overrides. The operator (or client) can edit any store's
+// contact details and copy by setting `params.retailers` — an object keyed by
+// store slug, e.g. { "autozone": { "phone": "...", "description": "..." } }.
+// The inline preview editor (?edit=1) exports exactly this shape. Anything not
+// overridden falls back to the curated default below.
+import { params } from './config.js';
+
+const overrides =
+  params && params.retailers && typeof params.retailers === 'object' ? params.retailers : {};
+
+// Deduped, slugged, merged with overrides, sorted for stable output.
+export const retailers = RAW.map((r) => {
+  const slug = slugify(r.name);
+  const ov = overrides[slug] && typeof overrides[slug] === 'object' ? overrides[slug] : {};
+  return {
+    ...r,
+    ...ov,
+    slug,
+    // keep arrays sane if an override sends a string or omits them
+    sells: Array.isArray(ov.sells) ? ov.sells : r.sells,
+    founded: ov.founded != null ? ov.founded : r.founded,
+  };
+}).sort((a, b) => a.name.localeCompare(b.name));
 
 export function retailerBySlug(slug) {
   return retailers.find((r) => r.slug === slug) || null;

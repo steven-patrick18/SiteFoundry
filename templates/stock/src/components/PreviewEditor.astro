@@ -1,0 +1,114 @@
+---
+// Inline "preview edit mode" for store pages. Add ?edit=1 to the URL to make
+// tagged fields ([data-rfield]) editable in place; mirrored spots ([data-bind])
+// update live. "Copy changes" exports a params.retailers override the operator
+// pastes into the site's params (then a rebuild makes it permanent). Edits are
+// saved to localStorage so the preview keeps them across reloads. No effect for
+// normal visitors (the toolbar only appears with ?edit=1).
+const { slug } = Astro.props;
+---
+<div id="sf-editbar" class="sf-editbar" data-slug={slug} hidden>
+  <span class="sf-editbar-title">✏️ Edit mode — click any highlighted text to change it.</span>
+  <span class="sf-editbar-actions">
+    <button type="button" id="sf-edit-export">Copy changes (JSON)</button>
+    <button type="button" id="sf-edit-reset">Reset</button>
+    <button type="button" id="sf-edit-done">Done</button>
+  </span>
+</div>
+<button type="button" id="sf-edit-enter" class="sf-edit-enter" hidden>✏️ Edit this page</button>
+
+<script is:inline>
+(function () {
+  function init() {
+    var bar = document.getElementById('sf-editbar');
+    if (!bar) return;
+    var slug = bar.getAttribute('data-slug') || 'store';
+    var KEY = 'sf-edit-' + slug;
+
+    function fields() { return [].slice.call(document.querySelectorAll('[data-rfield]')); }
+    function mirror(name, val) {
+      [].forEach.call(document.querySelectorAll('[data-bind="' + name + '"]'), function (el) {
+        el.textContent = val;
+      });
+      if (name === 'phone') {
+        var tel = 'tel:' + String(val).replace(/[^0-9+]/g, '');
+        [].forEach.call(document.querySelectorAll('[data-bind-link="phone"]'), function (a) {
+          a.setAttribute('href', tel);
+        });
+      }
+    }
+    function applySaved() {
+      var saved = {};
+      try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) {}
+      fields().forEach(function (el) {
+        var name = el.getAttribute('data-rfield');
+        if (saved[name] != null && String(saved[name]).length) el.textContent = saved[name];
+        mirror(name, el.textContent.trim());
+      });
+    }
+    function collect() {
+      var out = {};
+      fields().forEach(function (el) { out[el.getAttribute('data-rfield')] = el.textContent.trim(); });
+      return out;
+    }
+    function save() {
+      try { localStorage.setItem(KEY, JSON.stringify(collect())); } catch (e) {}
+    }
+
+    applySaved();
+
+    var wantEdit = false;
+    try { wantEdit = new URLSearchParams(location.search).get('edit') === '1'; } catch (e) {}
+
+    var enterBtn = document.getElementById('sf-edit-enter');
+    if (!wantEdit) {
+      // offer a discreet way in without cluttering the page for visitors
+      if (enterBtn) {
+        enterBtn.hidden = false;
+        enterBtn.addEventListener('click', function () {
+          var u = new URL(location.href); u.searchParams.set('edit', '1'); location.href = u.toString();
+        });
+      }
+      return;
+    }
+    if (enterBtn) enterBtn.hidden = true;
+
+    document.body.classList.add('sf-editing');
+    bar.hidden = false;
+    fields().forEach(function (el) {
+      el.setAttribute('contenteditable', 'true');
+      el.classList.add('sf-editable');
+      el.addEventListener('input', function () {
+        mirror(el.getAttribute('data-rfield'), el.textContent.trim());
+      });
+      el.addEventListener('blur', save);
+    });
+
+    var exportBtn = document.getElementById('sf-edit-export');
+    if (exportBtn) exportBtn.addEventListener('click', function () {
+      save();
+      var payload = {}; payload[slug] = collect();
+      var json = JSON.stringify({ retailers: payload }, null, 2);
+      var done = function () {
+        exportBtn.textContent = 'Copied! Paste into site params';
+        setTimeout(function () { exportBtn.textContent = 'Copy changes (JSON)'; }, 2200);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(json).then(done, function () { window.prompt('Copy this JSON:', json); });
+      } else { window.prompt('Copy this JSON:', json); }
+    });
+    var resetBtn = document.getElementById('sf-edit-reset');
+    if (resetBtn) resetBtn.addEventListener('click', function () {
+      try { localStorage.removeItem(KEY); } catch (e) {}
+      location.reload();
+    });
+    var doneBtn = document.getElementById('sf-edit-done');
+    if (doneBtn) doneBtn.addEventListener('click', function () {
+      save();
+      var u = new URL(location.href); u.searchParams.delete('edit'); location.href = u.toString();
+    });
+  }
+  if (document.readyState !== 'loading') init();
+  else document.addEventListener('DOMContentLoaded', init);
+})();
+</script>

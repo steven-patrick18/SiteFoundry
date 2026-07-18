@@ -197,6 +197,27 @@ const fontStack = `${brand.font ?? 'Inter'}, system-ui, -apple-system, 'Segoe UI
       .store-related { margin-top: 20px; }
       .store-related h2 { font-size: 20px; margin-bottom: 14px; }
       @media (max-width: 760px) { .store-side { position: static; flex-basis: 100%; } .dir-hero h1 { font-size: 24px; } }
+
+      /* store customer-service banner (top of every brand page) */
+      .store-banner { background: color-mix(in srgb, var(--primary) 12%, #fff); border-bottom: 1px solid color-mix(in srgb, var(--primary) 22%, #fff); }
+      .store-banner-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 0; flex-wrap: wrap; }
+      .store-banner-txt { font-size: 15px; color: #202124; }
+      .store-banner-ico { margin-right: 6px; }
+      .store-banner-num { color: var(--primary); font-weight: 800; text-decoration: none; font-size: 16px; }
+      .store-banner-num:hover { text-decoration: underline; }
+      .store-banner-cta { flex: 0 0 auto; background: var(--primary); color: #fff; font-weight: 700; font-size: 13px; padding: 7px 16px; border-radius: 999px; text-decoration: none; white-space: nowrap; }
+
+      /* inline preview editor */
+      .sf-edit-enter { position: fixed; right: 16px; bottom: 16px; z-index: 60; background: #202124; color: #fff; border: 0; border-radius: 999px; padding: 10px 18px; font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,.25); }
+      .sf-editbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; background: #202124; color: #fff; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; flex-wrap: wrap; box-shadow: 0 -4px 16px rgba(0,0,0,.25); }
+      .sf-editbar-title { font-size: 14px; }
+      .sf-editbar-actions { display: flex; gap: 8px; }
+      .sf-editbar button { background: #3c4043; color: #fff; border: 1px solid #5f6368; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+      .sf-editbar #sf-edit-export { background: var(--secondary); border-color: var(--secondary); color: #06280f; }
+      body.sf-editing { padding-bottom: 64px; }
+      body.sf-editing [data-rfield] { outline: 2px dashed color-mix(in srgb, var(--primary) 60%, #fff); outline-offset: 3px; border-radius: 3px; cursor: text; transition: background .1s; }
+      body.sf-editing [data-rfield]:hover { background: color-mix(in srgb, var(--primary) 8%, #fff); }
+      body.sf-editing [data-rfield]:focus { outline: 2px solid var(--primary); background: #fff; }
       .chips { display: flex; gap: 8px; overflow-x: auto; padding-top: 2px; padding-bottom: 10px; scrollbar-width: none; }
       .chips::-webkit-scrollbar { display: none; }
       .chip { flex-shrink: 0; border: 1px solid #dadce0; background: #fff; color: #3c4043; font-size: 13px; padding: 6px 14px; border-radius: 999px; cursor: pointer; }

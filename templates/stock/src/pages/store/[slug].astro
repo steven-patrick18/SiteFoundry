@@ -2,8 +2,11 @@
 import Base from '../../layouts/Base.astro';
 import SiteHeader from '../../components/SiteHeader.astro';
 import TrustFooter from '../../components/TrustFooter.astro';
+import PreviewEditor from '../../components/PreviewEditor.astro';
 import { params, site, href } from '../../lib/config.js';
 import { retailers, retailerBySlug, relatedRetailers, slugify } from '../../lib/retailers.js';
+
+const telHref = (phone) => 'tel:' + String(phone || '').replace(/[^0-9+]/g, '');
 
 // One page per retailer — but only for sites using the retailers template.
 export function getStaticPaths() {
@@ -93,6 +96,28 @@ const crumbLd = {
 
   <SiteHeader />
 
+  {/* Customer-service phone banner on top of every brand page */}
+  <div class="store-banner">
+    <div class="wrap store-banner-row">
+      {r.phone ? (
+        <span class="store-banner-txt">
+          <span class="store-banner-ico" aria-hidden="true">📞</span>
+          <strong>{r.name} Customer Service:</strong>
+          {' '}
+          <a class="store-banner-num" href={telHref(r.phone)} data-bind-link="phone"><span data-bind="phone">{r.phone}</span></a>
+          {' '}·{' '}
+          <span data-bind="hours">{r.hours}</span>
+        </span>
+      ) : (
+        <span class="store-banner-txt">
+          <span class="store-banner-ico" aria-hidden="true">💬</span>
+          <strong>{r.name} Support:</strong> reach the team through the official help center
+        </span>
+      )}
+      <a class="store-banner-cta" href={r.url} data-outbound rel="nofollow noopener" target="_blank">Official site →</a>
+    </div>
+  </div>
+
   <main class="wrap store-page">
     <nav class="breadcrumb" aria-label="Breadcrumb">
       <a href={href('/')}>Home</a>
@@ -106,7 +131,7 @@ const crumbLd = {
       <span class="store-logo" aria-hidden="true">{r.name.trim().charAt(0).toUpperCase()}</span>
       <div>
         <h1>{r.name} Customer Service &amp; Contact Information</h1>
-        <p class="store-tag">{r.tagline}</p>
+        <p class="store-tag" data-rfield="tagline">{r.tagline}</p>
       </div>
     </header>
 
@@ -114,21 +139,23 @@ const crumbLd = {
       <div class="store-main">
         <section class="prose">
           <h2>About {r.name}</h2>
-          <p>{r.description}</p>
+          <p data-rfield="description">{r.description}</p>
         </section>
 
         <section class="prose">
           <h2>How to contact {r.name}</h2>
           <p>
             There are several ways to reach {r.name}'s customer support team.
-            {r.phone
-              ? ` The quickest option for many shoppers is to call the customer service line at ${r.phone} during support hours (${r.hours}).`
-              : ` ${r.name} handles support online rather than by a public phone line, so the Help Center is the best starting point.`}
-            You can also visit the official website to use live chat, email or the
+            {r.phone ? (
+              <> The quickest option for many shoppers is to call the customer service line at <span data-bind="phone">{r.phone}</span> during support hours (<span data-bind="hours">{r.hours}</span>).</>
+            ) : (
+              <> {r.name} handles support online rather than by a public phone line, so the Help Center is the best starting point.</>
+            )}
+            {' '}You can also visit the official website to use live chat, email or the
             online help center, manage your account, and check order status.
           </p>
           <ul>
-            {r.phone && <li><strong>Phone:</strong> {r.phone} — {r.hours}</li>}
+            {r.phone && <li><strong>Phone:</strong> <span data-bind="phone">{r.phone}</span> — <span data-bind="hours">{r.hours}</span></li>}
             <li><strong>Online help center:</strong> available on the official website, {r.url}</li>
             <li><strong>Account &amp; orders:</strong> sign in at {r.url} to track shipments, start returns, and view receipts</li>
             <li><strong>Headquarters:</strong> {r.hq} (founded {r.founded})</li>
@@ -178,11 +205,11 @@ const crumbLd = {
         <div class="store-card">
           <h2 class="store-card-h">{r.name} at a glance</h2>
           <dl class="store-facts">
-            {r.phone && <><dt>Customer service</dt><dd>{r.phone}</dd></>}
-            <dt>Support hours</dt><dd>{r.hours}</dd>
-            <dt>Category</dt><dd>{r.category}</dd>
-            <dt>Headquarters</dt><dd>{r.hq}</dd>
-            <dt>Founded</dt><dd>{r.founded}</dd>
+            {r.phone && <><dt>Customer service</dt><dd data-rfield="phone">{r.phone}</dd></>}
+            <dt>Support hours</dt><dd data-rfield="hours">{r.hours}</dd>
+            <dt>Category</dt><dd data-rfield="category">{r.category}</dd>
+            <dt>Headquarters</dt><dd data-rfield="hq">{r.hq}</dd>
+            <dt>Founded</dt><dd data-rfield="founded">{r.founded}</dd>
           </dl>
           <a class="cta store-cta" href={r.url} data-outbound data-product={`${r.name} website`} rel="nofollow noopener" target="_blank">
             Visit {r.name} Official Site →
@@ -212,5 +239,6 @@ const crumbLd = {
     )}
   </main>
 
+  <PreviewEditor slug={r.slug} />
   <TrustFooter />
 </Base>
